@@ -1,0 +1,10 @@
+{
+  "name": "Inventory observation; start in the disposable world with no menu open",
+  "steps": [
+    {"action": "press", "args": {"keys": ["e"], "seconds": 0.1}},
+    {"action": "wait", "args": {"seconds": 0.5}},
+    {"action": "capture", "args": {"name": "inventory"}},
+    {"action": "press", "args": {"keys": ["esc"], "seconds": 0.1}},
+    {"action": "read_logs"}
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Addon Lab Demo Behavior",
+    "description": "A simple block fixture for exercising the tester; not a certified add-on",
+    "uuid": "99b32ca5-0515-46d1-b1a6-1514f2f738ed",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 90]
+  },
+  "modules": [{"type": "data", "uuid": "0d939c0c-16e1-43cf-8830-78f32dd0bef8", "version": [1, 0, 0]}],
+  "dependencies": [{"uuid": "21c19d6e-d969-4341-8f9b-d3f839745f73", "version": [1, 0, 0]}]
+}

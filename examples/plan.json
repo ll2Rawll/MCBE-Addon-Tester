@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "Demo block acceptance on Windows Bedrock",
+  "target": {
+    "edition": "Bedrock retail",
+    "platform": "Windows 10",
+    "file_version": "REPLACE_WITH_DOCTOR_FILE_VERSION",
+    "settings": "Survival, normal difficulty, keyboard/mouse, experiments off; record resolution, graphics mode and GUI scale"
+  },
+  "requirements": [
+    {"id": "pack.import", "category": "pack", "expected": "The disposable test world imports and opens with both demo packs active and no new pack-loading errors."},
+    {"id": "block.visual", "category": "graphics", "expected": "lab:test_block appears as a solid green emerald-textured cube on all six faces; no missing textures."},
+    {"id": "block.place", "category": "controls", "expected": "Placing the demo block through a real right-click consumes one item in Survival and puts lab:test_block at the aimed location."},
+    {"id": "block.inventory", "category": "menus", "expected": "The inventory shows the block with a readable Lab Test Block name and its icon; mouse selection and closing the menu work."},
+    {"id": "block.save", "category": "persistence", "expected": "After saving, exiting and reopening the same disposable world, the placed block remains at its saved position."}
+  ]
+}

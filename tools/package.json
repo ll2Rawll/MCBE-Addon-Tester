@@ -1,0 +1,10 @@
+{
+  "name": "mcbe-addon-tester-engine-tools",
+  "private": true,
+  "description": "Optional pinned validation and real BDS test adapters",
+  "dependencies": {
+    "@minecraft/creator-tools": "0.21.0",
+    "@bedrock-core/bds-runner": "0.2.1"
+  },
+  "engines": { "node": ">=22" }
+}
