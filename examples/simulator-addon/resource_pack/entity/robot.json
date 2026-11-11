@@ -1,0 +1,27 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "workshop:robot",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/robot"
+      },
+      "geometry": {
+        "default": "geometry.workshop.robot"
+      },
+      "animations": {
+        "idle": "animation.workshop.idle",
+        "active": "animation.workshop.active",
+        "controller": "controller.animation.workshop.robot"
+      },
+      "scripts": {
+        "animate": [
+          "controller"
+        ]
+      }
+    }
+  }
+}

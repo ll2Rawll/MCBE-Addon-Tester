@@ -1,0 +1,40 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:block": {
+    "description": {
+      "identifier": "workshop:lamp",
+      "states": {
+        "workshop:lit": [
+          false,
+          true
+        ]
+      },
+      "menu_category": {
+        "category": "construction"
+      }
+    },
+    "components": {
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "workshop_lamp_off",
+          "render_method": "opaque"
+        }
+      },
+      "workshop:toggle": {}
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('workshop:lit')",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "workshop_lamp_on",
+              "render_method": "opaque"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "resource_pack_name": "workshop",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "workshop_shard": {
+      "textures": [
+        "textures/items/shard"
+      ]
+    }
+  }
+}

@@ -11,3 +11,5 @@ node_modules/
 *.mcaddon
 *.mcpack
 .env
+.mcbe-sim/
+simulator-evidence/

@@ -1,61 +1,29 @@
-# Scope and known limitations
+# Simulation profile v1 boundaries
 
-## Implemented, not yet live-certified
+This is a partial independent emulator. It does **not** fully test every Bedrock add-on, recreate all graphics/menus/controls, or demonstrate 95% compatibility. Its built-in examples establish software conformance to the chosen model, not agreement with Minecraft.
 
-The Python packaging, world serialization, log parsing, visual diff, report rules and MCP
-protocol are tested using fixtures. Native Win32 structures/discovery are checked in Windows
-CI. There is no live Minecraft client in the development environment; Windows input, capture,
-import and the JavaScript observer need the acceptance run on the user's machine.
+## Runtime
 
-The example add-on is a fixture. Static validation does not establish that it renders,
-responds correctly or persists in a real world. GameTest execution requires authored tests;
-the tester does not automatically know the intended behavior of arbitrary content.
+The bounded world has a flat floor at y=0, coordinates within ±128, at most 2,048 blocks, 128 entities, 20,000 ticks, and 2,000 actions. Four MCP sessions may coexist. Sessions live in memory; export before closing. No world generation, dimensions other than the simulator overworld, fluids, redstone, networking, vanilla AI, full combat, persistence in LevelDB, resource-pack stacking, or platform-specific behavior is modeled.
 
-## Coverage boundaries
+Movement uses approximate speed, gravity, substeps, and axis-aligned collision. It does not model sneaking over edges, swimming, step-up, complex selection shapes, climbing, sprint timing, or engine float rounding. Semantic `place`, `break`, and `interact` target explicit positions for tests; they do not enforce native reach or survival inventory consumption. Crosshair clicks use a simplified ray. Mining is immediate and respects only the boolean unbreakable setting; mining duration is not simulated. Inventory stores item counts, not full slot/stack/NBT semantics. Recipe tags, custom stations and ingredient data variants are unsupported.
 
-- Only Windows keyboard/mouse client input is implemented. Console, phone, controller,
-  touch, accessibility and remote/locked-desktop scenarios require separate adapters/tests.
-- Images capture visible screen pixels. An overlay, exclusive fullscreen capture problem,
-  minimized window, different graphics mode or scaling can invalidate visual observations.
-- There is no automatic audio recording, acoustic classifier, renderer frame-time capture
-  or GPU benchmark. The AI can issue Minecraft profiler commands, but importing/interpreting
-  profiler artifacts is not currently an integrated tool.
-- Animation inspection is a timestamped sequence of PNGs, not continuous video or exhaustive
-  coverage of every animation controller state. It includes screenshot overhead.
-- No multiplayer client orchestration or network impairment simulation is included.
-- No semantic proof of Molang/script correctness, exhaustive fuzzing, mutation generator,
-  automatic fix-and-retest loop or complete add-on schema engine is implemented locally.
-  Use Mojang validation and authored tests. AI clients can edit code with their own tools.
-- The optional observer runs a separate behavior pack, samples state and may affect timing.
-  It cannot expose every internal engine state. Missing or ambiguous observations must block.
-- It supports unpacked add-ons and ordinary ZIP-based `.mcpack`/`.mcaddon` inputs, not encrypted
-  Marketplace content, arbitrary archive formats or optimized `.brarchive` decoding. Currently
-  manifests must have numeric three-part pack versions and behavior/resource module types.
-- A `.mcworld` export with real LevelDB data is needed. Templates with active/embedded packs
-  are rejected. No existing Minecraft folder is edited by the pack builder.
-- Add-on assets can depend on platform caches, load order, settings and other packs. These
-  combinations must be added to the test plan; they are not inferred exhaustively.
-- The current release query resolves official BDS builds. Client store update verification is
-  not implemented; reports state that explicitly. File-version comparison is exact, not a
-  guessed conversion between marketing, package, engine and Script API versions.
-- MCP is local stdio. GitHub/cloud access alone does not run it on your computer. A compatible
-  local AI client is required; the project contains no hosted service, AI subscription or model.
+## Scripts
 
-## Reports and measurement
+`esprima` parses ES2017 source into an AST; our interpreter evaluates only explicitly implemented nodes. There is no host `eval`, shell, Node runtime, network, filesystem API, or Python object reflection available to scripts. Operation/call/collection limits prevent common runaway inputs; this is a prototype interpreter, not an independently audited security sandbox. Avoid exposing a process with local file tools directly to untrusted remote users.
 
-The tool preserves plan and evidence files with hashes and audit records, but it is not a
-tamper-proof attestation system against someone who can edit all local files. AI review may
-misinterpret a screenshot. A baseline can also be wrong. Results identify review provenance.
+Implemented API objects: a subset of `world`, `system`, `BlockPermutation`, and `ItemStack`. Timers, selected events, scalar dynamic properties, block access/permutations, entity spawn/event/remove, and two custom block hooks (`onPlace`, `onPlayerInteract`) are modeled. Vector handles and component objects are snapshots, not all native live objects. API privilege restrictions, lifecycle ordering and all API-version differences are not reproduced. JavaScript coercion, scopes and hoisting are partial. Unsupported syntax/API use blocks the report when detected. Async/await, generators, classes, promises/forms, eval, the full standard library, server-ui, commands, scoreboard and most components are not implemented.
 
-A finite test suite can cover every requirement explicitly listed in its plan. It cannot
-prove every possible Minecraft state. A benchmark score only applies to the selected,
-independently labelled examples. Known-good controls, defect diversity, held-out cases and
-manual adjudication of unrelated failures matter. No measured 95% claim has been established.
+## Rendering and menus
 
-## Recovery
+CPU-rasterized textured cuboids, bone transforms, basic UVs, linear keyframes and limited animation controllers are previews. They do not implement native camera/render math, all texture orientation/version rules, native clipping, culling, translucency sorting, lighting, shaders, PBR, RTX/Vibrant Visuals, particles, sound, attachables or render-controller selection. Animation controller blend transitions and entry/exit side effects are unsupported. Some cube/UV mirroring details differ. The floor and interface are original simulator visuals.
 
-After an interrupted/crashed operation, ensure the controller/external server is stopped
-before removing `busy.lock`. Leave `STOP` in place until ready to resume. Start a fresh run
-after changing a pack/build; failed external checks intentionally remain in the old report.
-All run data is under the configured root. Imported disposable worlds remain in Minecraft
-until you delete those named test worlds through its UI; the program does not silently delete them.
+The included inventory/pause screens can be operated by the AI. Bedrock's actual menus, custom JSON UI, screen bindings, controller/touch layouts, accessibility behavior and Script API forms are not implemented. Missing textures produce a visibly marked placeholder and an unresolved finding; no vanilla assets are bundled.
+
+## Validation and results
+
+The content scanner is not a full Bedrock schema implementation. Unknown top-level files/components are reported, but detection of unsupported nested fields is incomplete. A passed simulated assertion means exactly that; no native compatibility claim follows, even if the scanner found no gaps. Native performance, device compatibility and latest-build behavior are always unverified. `--target-version` records an intended target; it does not select a native engine.
+
+Fixture setters and assertions can expose mistakes but cannot derive an author's intent. Auto-enumerating every block state does not establish that state behavior is correct. Images cannot decide whether a design is intended. A replay reproduces this model's result, not a native engine result. Image comparison uses a supplied reference and cannot validate all visual contexts.
+
+A useful compatibility percentage would need an independent, representative, version-specific corpus with native observations or another justified oracle. No such corpus is included. We therefore publish no percentage; `accuracy_percent` is null, including in passing reports. Unsupported cases must remain in the denominator of any future benchmark.

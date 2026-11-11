@@ -1,140 +1,39 @@
-# Research and design decision
+# Independent Bedrock simulation research
 
-Research date: **11 November 2026**. Source review and code inspection informed this
-implementation; they are not evidence that the tester has completed live game acceptance.
+Research checked 2026-11-11. The product requirement is a simulator with no game runtime and no AI API. This document distinguishes published specifications, third-party implementations, implemented behavior, and unmeasured fidelity. Earlier real-client research is preserved in [LEGACY-RESEARCH.md](LEGACY-RESEARCH.md); that workflow is not the active design.
 
-## Use Minecraft's engine and client
+## Findings and design decisions
 
-A small independent simulator would need to reproduce version-specific add-on loading,
-script execution, entity AI, tick scheduling, Molang, rendering, UI, inputs and platform
-behavior. Any inaccurate part becomes a blind spot. Reusing the official server and actual
-client avoids having to invent those semantics. This is an engineering conclusion from
-the mechanisms below, not a published measured accuracy claim.
-
-Mojang's **GameTest** already defines small in-world environments with starting conditions,
-execution time and assertions. It is the closest existing equivalent to the requested
-mini-simulation, except it runs in Minecraft itself. The official workflow requires cheats
-and the Beta APIs experiment. Tests must describe what is supposed to happen.
-[Microsoft: GameTest introduction](https://learn.microsoft.com/en-us/minecraft/creator/documents/gametestgettingstarted?view=minecraft-bedrock-stable)
-and [official sample tests](https://github.com/microsoft/minecraft-gametests).
-
-The official **Bedrock Dedicated Server** is available for Windows and Ubuntu, and supports
-scripting. It supplies real server-side execution without the graphical client. Server-specific
-experimental APIs are not automatically available in Realms.
-[Official BDS download](https://www.minecraft.net/en-us/download/server/bedrock) ·
-[Microsoft: BDS scripting](https://learn.microsoft.com/en-us/minecraft/creator/documents/bedrockserver/scripting?view=minecraft-bedrock-stable).
-
-## Existing tools: useful, with specific limits
-
-| Tool/mechanism | What was verified from its documentation/source | Consequence for this project |
+| Primary source | What it establishes | Decision for this project |
 | --- | --- | --- |
-| Mojang Minecraft Creator Tools | CLI validation, MCP integration, packaging, test-world deployment | Reuse its static validator; do not build a competing partial schema database |
-| MCT validation rules | Manifest, versions, scripts, textures, references, paths and other checks | Validation can catch file faults before engine execution |
-| MCT `autotest` source | Deploys to BDS, waits for startup, allows 15 seconds, captures output and stops | Its name is not proof of exhaustive gameplay/UI testing |
-| `@bedrock-core/bds-runner` | Runs explicit GameTest tags, reports per-test verdicts, expected count, script errors and infrastructure failures | Adapter pins version and test count; unknown/missing reports block |
-| GameTest simulated players | APIs cover movement and interactions, with documented event differences | Test real-client interactions separately |
-| Windows input automation | Existing Bedrock proof of concept uses Python/keyboard/mouse | Native Windows input is feasible, but our adapter still needs live acceptance |
-| `mcpelauncher-agent` | Community bridge drives a real client through a modified launcher; its README notes GPU/GUI requirements | Evidence that AI real-client control exists; not a validated Windows 10 solution |
-| PocketMine-MP | Its own documentation says behavior packs are unsupported | Not a substitute runtime for validating arbitrary Bedrock add-ons |
+| [Microsoft Molang syntax](https://learn.microsoft.com/en-us/minecraft/creator/documents/molang/syntax-guide?view=minecraft-bedrock-stable) and [query reference](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/molangreference/examples/molangconcepts/queryfunctions) | Expressions, variables, conditions and named context queries are specified publicly | Implement a parser and explicit query subset; unknown queries block rather than returning an invented default |
+| [Microsoft block geometry](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/blockreference/examples/blockcomponents/minecraftblock_geometry?view=minecraft-bedrock-stable) | Geometry selection has version-dependent rules and optional properties | Render supported pack cuboids; report options not implemented. Do not equate a preview with native graphics |
+| [Microsoft animation controllers](https://learn.microsoft.com/en-us/minecraft/creator/documents/animations/animationcontroller?view=minecraft-bedrock-stable) and [animation overview](https://learn.microsoft.com/en-us/minecraft/creator/documents/animations/animationsoverview) | Bones, channels, timed keyframes, expressions and ordered transitions have documented semantics | Implement linear sampling and a bounded controller subset. Blend transitions, all queries and side effects remain gaps |
+| [Script V2 overview](https://learn.microsoft.com/en-us/minecraft/creator/documents/scriptingv2.0.0overview) and [custom components](https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/custom-components) | Startup registration and custom-component dispatch use defined APIs; lifecycle behavior changes across API versions | Implement selected startup/hooks/timers explicitly, label scheduling and privileges approximate |
+| [System run guide](https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/system-run-guide) and [execution privileges](https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/execution-privilege?view=minecraft-bedrock-stable) | Tick timing and permitted API use depend on execution phase | Our timer is an independent model, not proof of exact engine ordering or privilege compliance |
+| [JSON UI definitions](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/jsonuireference/examples/jsonuicomponents/ui_defs?view=minecraft-bedrock-stable) | Loading UI files is only one part of a larger screen/binding system | Custom JSON UI remains unsupported; simulator menus are clearly distinguished |
+| [Mojang Creator Tools](https://github.com/Mojang/minecraft-creator-tools) and [validation rules](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/mctoolsvalreference/validationrulesindex?view=minecraft-bedrock-stable) | Official static validation is available | Useful independent validation layer; it does not supply a full client renderer or gameplay engine. The simulator does not invoke MCT's BDS autotest |
+| [BedSim source and documentation](https://github.com/oomph-ac/bedsim) | A standalone movement model can cover substantial mechanics, with provider requirements and documented deviations | Supports feasibility of subsystem simulation. It is not an entire add-on runtime and is not integrated into v0.2 |
+| [Cinnabar source and documentation](https://github.com/cinnabar-mc/cinnabar) | An independent Rust client exists; its README says player worlds use BDS | It does not meet this request's no-BDS runtime requirement as a complete solution. Its license is PolyForm Noncommercial, so no source is copied into this MIT project |
+| [MCP stdio transport](https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio) and [client integration](https://ts.sdk.modelcontextprotocol.io/v2/get-started/real-host) | An existing assistant can call tools in a separate local process | Expose simulation operations and PNGs through MCP; the tester itself makes no AI calls |
+| [OpenAI custom MCP connections](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt) | ChatGPT connects to remote MCP servers; local processes require a supported connection path | Do not claim a GitHub repository or stdio process is automatically a callable ChatGPT web tool |
 
-Primary references:
+## Proposed route to broader fidelity
 
-- [Mojang Creator Tools CLI README](https://github.com/Mojang/minecraft-creator-tools/blob/main/app/jsnode/README.md)
-- [MCT validation rules](https://learn.microsoft.com/en-us/minecraft/creator/reference/content/mctoolsvalreference/validationrulesindex?view=minecraft-bedrock-stable)
-- [MCT AutotestCommand implementation](https://github.com/Mojang/minecraft-creator-tools/blob/main/app/src/cli/commands/content/AutotestCommand.ts)
-- [BDS runner documentation](https://bedrock-core.drav.dev/docs/bds-runner/)
-- [BDS runner command/error semantics](https://bedrock-core.drav.dev/docs/bds-runner/cli/)
-- [BDS runner settings](https://bedrock-core.drav.dev/docs/bds-runner/config/)
-- [Microsoft: SimulatedPlayer](https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-gametest/simulatedplayer?view=minecraft-bedrock-experimental)
-- [Windows Bedrock input proof of concept](https://github.com/lefkovitzj/Minecraft-BE-Input-Scripting)
-- [mcpelauncher-agent's own README](https://github.com/bedrock-mc/mcpelauncher-agent)
-- [PocketMine's behavior-pack limitation](https://doc.pmmp.io/en/rtfd/resourcepacks.html)
+The architecture is an independent, executable model of the add-on surface: pack loader → feature inventory → virtual state and script interpreter → animation/renderer → input/menu model → assertions and evidence. The host AI selects scenarios, inspects output and interprets the report. Deterministic traces allow the same inputs to be rechecked after a model improvement.
 
-## Details that prevent misleading results
+This makes simulation without Minecraft possible for implemented features. It does **not** make native compatibility automatic. The public content specifications omit some engine behavior; implementing one subsystem does not establish all its interactions. A simulator can reproduce its own mistake consistently.
 
-**Simulated input is not identical to real input.** Microsoft explicitly warns that some
-events, including item-use events, may behave differently for simulated players. Its
-`attackEntity` method can also attack without normal distance/line-of-sight constraints.
-Use real Windows input for acceptance of player interactions; use simulation for the
-assertions its semantics actually support. See the SimulatedPlayer reference above.
+A credible path toward high measured coverage requires versioned feature contracts, independently sourced reference observations, adversarial add-ons, held-out tests, and per-subsystem mismatch reports. Reference datasets can be consumed without installing the game on an end user's machine. This project does not yet include a native reference corpus or a measured compatibility percentage. No empirical basis for “95% of all add-ons” was found in this research.
 
-**Runner defaults affect the experiment.** The inspected BDS runner defaults to Peaceful,
-Creative and modified watchdog behavior. These can hide relevant mob and performance
-problems. This adapter chooses Normal difficulty and standard watchdog thresholds, while
-the final client pass must retain the add-on's intended settings. See the runner settings above.
+Useful next increments are native JSON UI/bindings and forms, broader Script API semantics and scheduling, full render-controller evaluation, more complete movement physics, and systematic tests of component combinations. They remain work to implement and calibrate, not features of the current release.
 
-**Beta tests alter the target environment.** GameTest's experimental API does not establish
-that an add-on also works with experiments disabled. Keep a separate ordinary client
-acceptance pass, and do not mix Preview compatibility with retail compatibility.
-[Microsoft: GameTest module status](https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-gametest/minecraft-server-gametest?view=minecraft-bedrock-experimental).
+## Version handling
 
-**Client storage changed.** GDK builds use new Windows paths; hard-coding only the old UWP
-folder misses logs and packs. The built-in log discovery covers the retail GDK and legacy
-locations, with explicit overrides available.
-[GDK migration](https://learn.microsoft.com/en-us/minecraft/creator/documents/gdkpcprojectfolder?view=minecraft-bedrock-stable)
-and [current logging/profiler documentation](https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/debugging-scripts?view=minecraft-bedrock-stable).
+The earlier metadata check on 2026-11-11 returned stable BDS `1.26.63.1` and preview `1.26.70.24` from [Minecraft's official download metadata](https://net-secondary.web.minecraft-services.net/api/v1.0/download/links). That is a server-build observation, not proof of the Windows client's version or simulator support. Marketing, binary, content-format, and Script API version numbers are distinct.
 
-**Game and API version numbers differ.** Use an exact installed game build plus the manifest's
-actual API dependencies. Do not set every `format_version` to a marketing release number.
-[Microsoft: Script module versioning](https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/versioning?view=minecraft-bedrock-stable).
+The simulator currently has one named profile, `independent-bedrock-subset-v1`. `target_version` records the user's intended build. It does not select engine binaries, claim latest-version parity, or update component semantics automatically.
 
-## Latest-version finding
+## Verification performed
 
-The official download-links service returned **BDS stable 1.26.63.1** and **Preview
-1.26.70.24** during research on 11 November 2026:
-[official download metadata](https://net-secondary.web.minecraft-services.net/api/v1.0/download/links).
-The release-changelog index was still headed by 26.62 when checked, illustrating why a
-cached article alone is insufficient for build selection.
-[Official changelog index](https://feedback.minecraft.net/hc/en-us/sections/360001186971-Release-Changelogs).
-
-These are dated findings, not forever-current constants. `mcbe-test versions` re-queries
-the official service and fails visibly if the response cannot be understood. It does not
-download anything or infer Windows client file-version equivalence. The current report
-explicitly retains `latest_release_verified: false` because no client-store update check
-has been automated.
-
-## What a defensible 95% target would require
-
-Define the supported scope first: specific versions/platforms, add-on features and fault
-categories. Build an independently reviewed corpus containing working packs and known
-defects. Examples: a missing texture, wrong script entry, broken dependency, omitted
-event handler, incorrect recipe output, inverted cooldown condition, broken menu action,
-lost saved state, and a visual state transition error.
-
-Run the **same tester and predetermined requirements** on a held-out corpus. Count:
-
-- **Bug detection:** buggy cases correctly flagged / all labelled buggy cases.
-- **False alarms:** known-good cases incorrectly flagged / all known-good cases.
-- **Blocked/inconclusive cases:** report separately; never silently exclude them to inflate detection.
-- **Requirement coverage:** assessed requirements / declared requirements. This is a different metric.
-
-The `benchmark` command consumes saved reports and labels:
-
-```json
-{
-  "cases": [
-    {"id":"good-1","buggy":false,"description":"Independently verified working pack","report":"good/report.json"},
-    {"id":"broken-1","buggy":true,"description":"Missing texture used by the visible mob","report":"broken/report.json"}
-  ]
-}
-```
-
-```text
-mcbe-test benchmark cases.json --out benchmark-result.json
-```
-
-Labels are inputs, not truths the tool can establish by itself. A failed report caused by
-an unrelated test or environment fault must be adjudicated before counting it as detection
-of the seeded bug. Include enough diverse cases and report uncertainty; a 95% score on a
-small or cherry-picked corpus cannot justify a universal “95% accurate” claim. No such corpus
-has been evaluated for this release.
-
-Deliberately changing behavior to check whether a test detects the change is mutation
-testing. Equivalent mutations and unrepresentative defects can distort its score.
-[Stryker: mutation testing](https://stryker-mutator.io/docs/)
-and [equivalent mutations](https://stryker-mutator.io/docs/mutation-testing-elements/equivalent-mutants/).
-
-For a finite list of requirements, it is possible to test every listed case. For arbitrary
-add-ons, worlds, inputs, future updates and device combinations, exhaustive correctness
-cannot be established by this program. The intended product is a reproducible real-game
-test lab with explicit gaps, rather than an unmeasured accuracy promise.
+The included original workshop pack runs with no game files. The scenario exercises ten explicit expectations and produces PNGs, assertions and a replay. Automated tests include a real MCP protocol round trip, missing assets, unsupported APIs, runaway scripts, state changes, image changes and deterministic replay. The 60-test suite passed on Linux with one Windows-only check skipped. Mojang Creator Tools 0.21.0 static validation of the workshop fixture returned zero errors, zero warnings and four format-version recommendations. These are simulator/software and static checks. Native gameplay, GPU fidelity and complete UI compatibility were not verified.

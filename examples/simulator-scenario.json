@@ -1,0 +1,34 @@
+{
+  "requirements": [
+    {"id":"toggle", "text":"Interacting with an unlit lamp sets workshop:lit to true."},
+    {"id":"inventory", "text":"The inventory key opens the simulator inventory and its close button returns to the world."},
+    {"id":"recipe", "text":"Two shards craft one lamp and consume both shards."},
+    {"id":"script", "text":"The heartbeat callback runs twice during ten simulated ticks."},
+    {"id":"entity", "text":"The activate event sets the robot's active property."},
+    {"id":"collision", "text":"Walking toward the lamp cannot pass through its collision box."}
+  ],
+  "steps": [
+    {"action":{"type":"set_block","identifier":"workshop:lamp","position":[0,0,0]}},
+    {"assert":{"requirement":"toggle","path":"/blocks/0,0,0/states/workshop:lit","operator":"eq","expected":false}},
+    {"action":{"type":"interact","position":[0,0,0]}},
+    {"assert":{"requirement":"toggle","path":"/blocks/0,0,0/states/workshop:lit","operator":"eq","expected":true}},
+    {"action":{"type":"key","key":"e"}},
+    {"assert":{"requirement":"inventory","path":"/player/menu","operator":"eq","expected":"inventory"}},
+    {"render":{}},
+    {"action":{"type":"click","x":0.86,"y":0.16}},
+    {"assert":{"requirement":"inventory","path":"/player/menu","operator":"eq","expected":"game"}},
+    {"action":{"type":"give","identifier":"workshop:shard","count":2}},
+    {"action":{"type":"craft","recipe":"workshop:lamp_recipe","grid":["workshop:shard","workshop:shard",null,null,null,null,null,null,null]}},
+    {"assert":{"requirement":"recipe","path":"/player/inventory/workshop:lamp","operator":"eq","expected":1}},
+    {"assert":{"requirement":"recipe","path":"/player/inventory/workshop:shard","operator":"eq","expected":0}},
+    {"action":{"type":"spawn","identifier":"workshop:robot","position":[2,0,0]}},
+    {"action":{"type":"entity_event","entity_id":"e1","event":"workshop:activate"}},
+    {"assert":{"requirement":"entity","path":"/entities/e1/properties/workshop:active","operator":"eq","expected":true}},
+    {"action":{"type":"tick","ticks":10}},
+    {"assert":{"requirement":"script","path":"/dynamic_properties/workshop:heartbeat","operator":"eq","expected":2}},
+    {"render":{}},
+    {"action":{"type":"move","keys":["w"],"ticks":30}},
+    {"assert":{"requirement":"collision","path":"/player/position/2","operator":"ge","expected":1.3}},
+    {"assert":{"requirement":"collision","path":"/player/position/2","operator":"lt","expected":1.4}}
+  ]
+}

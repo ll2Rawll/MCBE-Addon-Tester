@@ -1,0 +1,54 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Simulator workshop data",
+    "description": "Original independent-simulator fixtures; native compatibility unverified",
+    "uuid": "2a8ad08f-8350-426f-93a5-83bcf091d22c",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "58ea315e-a619-4c2a-b055-cb7a47a0f630",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "uuid": "abdc18d1-f9e1-49ab-b080-4a005ab84673",
+      "version": [
+        1,
+        0,
+        0
+      ],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": "2.0.0"
+    },
+    {
+      "uuid": "b33593cb-9e69-4e26-9280-9b80fdafc972",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

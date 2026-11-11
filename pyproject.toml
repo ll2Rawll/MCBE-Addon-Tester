@@ -4,18 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcbe-addon-tester"
-version = "0.1.0"
-description = "Evidence-based Bedrock add-on testing with a local Windows AI control interface"
+version = "0.2.0"
+description = "Independent Bedrock add-on simulation and MCP tools; no Minecraft or AI API required"
 requires-python = ">=3.11"
-dependencies = ["Pillow>=11,<13", "nbtlib>=2.0.4,<3"]
+dependencies = ["Pillow>=11,<13", "numpy>=1.26,<3", "nbtlib>=2.0.4,<3", "esprima==4.0.1"]
 
 [project.optional-dependencies]
 ai = ["mcp>=1.12,<2"]
 dev = ["ruff>=0.11,<1"]
 
 [project.scripts]
-mcbe-test = "mcbe_tester.cli:main"
-mcbe-test-mcp = "mcbe_tester.mcp_server:main"
+bedrock-addon-tester = "mcbe_tester.sim.cli:main"
+mcbe-test = "mcbe_tester.sim.cli:main"
+mcbe-test-mcp = "mcbe_tester.sim.mcp:main"
+mcbe-legacy = "mcbe_tester.cli:main"
+mcbe-legacy-mcp = "mcbe_tester.legacy_mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

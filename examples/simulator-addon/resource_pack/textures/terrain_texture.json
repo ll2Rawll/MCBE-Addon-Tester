@@ -1,0 +1,16 @@
+{
+  "resource_pack_name": "workshop",
+  "texture_name": "atlas.terrain",
+  "texture_data": {
+    "workshop_lamp_off": {
+      "textures": [
+        "textures/blocks/lamp_off"
+      ]
+    },
+    "workshop_lamp_on": {
+      "textures": [
+        "textures/blocks/lamp_on"
+      ]
+    }
+  }
+}

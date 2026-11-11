@@ -1,0 +1,30 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.workshop.robot": {
+      "initial_state": "idle",
+      "states": {
+        "idle": {
+          "animations": [
+            "idle"
+          ],
+          "transitions": [
+            {
+              "active": "q.property('workshop:active')"
+            }
+          ]
+        },
+        "active": {
+          "animations": [
+            "active"
+          ],
+          "transitions": [
+            {
+              "idle": "!q.property('workshop:active')"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

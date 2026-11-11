@@ -19,7 +19,7 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
             spec = plan(root / "plan.json")
             params = StdioServerParameters(
                 command=sys.executable,
-                args=["-m", "mcbe_tester.mcp_server"],
+                args=["-m", "mcbe_tester.legacy_mcp_server"],
                 env={**os.environ, "MCBE_LAB_ROOT": str(root / "lab")},
             )
             async with stdio_client(params) as (reader, writer), ClientSession(reader, writer) as session:

@@ -1,0 +1,38 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.workshop.idle": {
+      "loop": true,
+      "animation_length": 2,
+      "bones": {
+        "antenna": {
+          "rotation": [
+            0,
+            0,
+            "math.sin(q.anim_time * 180) * 12"
+          ]
+        }
+      }
+    },
+    "animation.workshop.active": {
+      "loop": true,
+      "animation_length": 2,
+      "bones": {
+        "body": {
+          "rotation": [
+            0,
+            "q.anim_time * 180",
+            0
+          ]
+        },
+        "antenna": {
+          "rotation": [
+            0,
+            0,
+            "math.sin(q.anim_time * 360) * 35"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "format_version": "1.21.90",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "workshop:robot",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "properties": {
+        "workshop:active": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:health": {
+        "value": 12,
+        "max": 12
+      },
+      "minecraft:collision_box": {
+        "width": 0.7,
+        "height": 1.5
+      },
+      "minecraft:physics": {
+        "has_gravity": true,
+        "has_collision": true
+      }
+    },
+    "events": {
+      "workshop:activate": {
+        "set_property": {
+          "workshop:active": true
+        }
+      }
+    }
+  }
+}

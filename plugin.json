@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bedrock-addon-tester",
+  "version": "0.2.0",
+  "description": "Independent Bedrock add-on simulation, rendered previews and reproducible tests. No Minecraft runtime or AI API key required. Partial emulator; native compatibility unverified.",
+  "author": {"name": "ll2Rawll"},
+  "repository": "https://github.com/ll2Rawll/MCBE-Addon-Tester",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Bedrock Addon Tester",
+        "shortDescription": "Simulate Bedrock add-ons",
+        "longDescription": "Run a local independent simulator through MCP to inspect packs, exercise supported behavior and virtual controls, render textures and animation, and export assertions and replay evidence. No game or AI API key is required. This is a partial emulator, not a hosted ChatGPT app or a native compatibility guarantee.",
+        "developerName": "ll2Rawll",
+        "capabilities": [],
+        "defaultPrompt": "Use Bedrock Addon Tester to simulate my add-on, test its specified behavior, inspect its rendered assets, and report failures and unsupported features."
+      }
+    }
+  }
+}
