@@ -16,14 +16,20 @@ BLOCK_COMPONENTS = {
     "minecraft:geometry",
     "minecraft:material_instances",
     "minecraft:collision_box",
+    "minecraft:selection_box",
     "minecraft:display_name",
     "minecraft:destructible_by_mining",
     "minecraft:custom_components",
+    "minecraft:tick",
 }
 ITEM_COMPONENTS = {
     "minecraft:display_name",
     "minecraft:icon",
     "minecraft:block_placer",
+    "minecraft:max_stack_size",
+    "minecraft:durability",
+    "minecraft:tags",
+    "minecraft:custom_components",
 }
 ENTITY_COMPONENTS = {
     "minecraft:health",
@@ -33,6 +39,7 @@ ENTITY_COMPONENTS = {
     "minecraft:movement",
     "minecraft:movement.basic",
     "minecraft:nameable",
+    "minecraft:inventory",
 }
 METADATA = {"format_version", "description"}
 
@@ -76,7 +83,10 @@ class Catalog:
                     self.findings.unsupported(
                         "external-pack", prefix, f"Dependency not supplied: {dep['uuid']}"
                     )
-                if dep.get("module_name") and dep["module_name"] != "@minecraft/server":
+                if dep.get("module_name") and dep["module_name"] not in {
+                    "@minecraft/server",
+                    "@minecraft/server-ui",
+                }:
                     self.findings.unsupported("script-module", prefix, dep["module_name"])
             for module in pack["manifest"].get("modules", []):
                 if module["type"] == "script":
@@ -206,8 +216,14 @@ class Catalog:
         self.findings.approximate(
             "menus",
             "profile",
-            "Simulator inventory/pause menus; native Bedrock UI and custom JSON UI are not reproduced",
+            "Simulator inventory/pause/forms layout; native Bedrock UI and custom JSON UI are not reproduced",
         )
+        if self.scripts:
+            self.findings.approximate(
+                "script-scheduling",
+                "profile",
+                "QuickJS and bounded deterministic timers/jobs; native privileges, lifecycle ordering and per-version API differences are not fully reproduced",
+            )
 
     def states(self, identifier):
         definitions = self.blocks[identifier].get("description", {}).get("states", {})

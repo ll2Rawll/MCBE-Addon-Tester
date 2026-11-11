@@ -1,0 +1,8 @@
+{
+  "name": "bedrock-addon-tester-module-bundler",
+  "private": true,
+  "version": "0.3.0",
+  "description": "Parses and bundles add-on ES modules; never executes them in Node",
+  "dependencies": {"esbuild": "0.25.12"},
+  "engines": {"node": ">=20"}
+}

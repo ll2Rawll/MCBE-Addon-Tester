@@ -49,6 +49,7 @@ for name, kind, uid in [
             }
         )
         manifest["dependencies"] = [
+            {"module_name": "@minecraft/server-ui", "version": "2.0.0"},
             {"module_name": "@minecraft/server", "version": "2.0.0"},
             {"uuid": "b33593cb-9e69-4e26-9280-9b80fdafc972", "version": [1, 0, 0]},
         ]

@@ -46,6 +46,7 @@ def main():
 
         serve()
         return
+    sim = None
     try:
         sim = Simulation.open(args.addon, args.seed, args.target_version)
         if args.command == "inspect":
@@ -64,6 +65,7 @@ def main():
                 )
                 replay_seed = spec.get("seed", args.seed)
                 if replay_seed != args.seed or replay_target != args.target_version:
+                    sim.close()
                     sim = Simulation.open(args.addon, replay_seed, replay_target)
                 sim.scenario(spec)
             else:
@@ -96,6 +98,9 @@ def main():
     except (ValueError, OSError, KeyError) as exc:
         print(json.dumps({"error": str(exc)}), file=sys.stderr)
         sys.exit(1)
+    finally:
+        if sim is not None:
+            sim.close()
 
 
 if __name__ == "__main__":

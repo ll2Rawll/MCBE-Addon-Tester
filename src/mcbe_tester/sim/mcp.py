@@ -51,14 +51,17 @@ def simulator_capabilities() -> dict:
             "block states and permutations",
             "shaped/shapeless crafting",
             "entity component-group events",
-            "bounded ES2017 and Script API subset",
+            "isolated QuickJS, ES modules, classes, async/await, promises, generator jobs",
+            "selected Script API, commands, queries, effects and scoreboards",
             "Molang subset",
             "textured cuboid geometry",
             "linear skeletal animation and basic controller transitions",
-            "virtual input, inventory and pause menus",
+            "slot inventories, item metadata, virtual input, inventory and pause menus",
+            "async action/message/modal forms with clickable controls and pagination",
         ],
         "not_implemented": [
-            "full Script API/JavaScript",
+            "complete Script API, native privileges and scheduling",
+            "dynamic code compilation and external imports",
             "native JSON UI",
             "RenderDragon/PBR/shaders",
             "vanilla content not supplied",
@@ -84,6 +87,12 @@ def simulator_capabilities() -> dict:
             "place",
             "use",
             "click",
+            "form_response",
+            "form_input",
+            "text",
+            "chat",
+            "command",
+            "damage",
         ],
     }
 
@@ -113,6 +122,7 @@ def close_session(session_id: str) -> dict:
     """Release a session's memory. Export evidence first if it should be retained."""
     with mutex:
         session(session_id)
+        sessions[session_id].close()
         del sessions[session_id]
         return {"closed": session_id}
 

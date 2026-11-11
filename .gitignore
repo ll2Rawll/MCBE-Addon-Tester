@@ -13,3 +13,5 @@ node_modules/
 .env
 .mcbe-sim/
 simulator-evidence/
+emulator-evidence/
+replay-evidence/

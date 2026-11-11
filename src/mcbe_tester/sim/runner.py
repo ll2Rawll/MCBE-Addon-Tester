@@ -17,8 +17,8 @@ from ..packs import safe_name
 from . import PROFILE, VERSION
 from .catalog import Catalog
 from .diagnostics import Unsupported
-from .javascript import Interpreter
 from .render import render
+from .runtime import ScriptRuntime
 from .world import World
 
 
@@ -46,10 +46,13 @@ class Simulation:
         self.requirements = {}
         self.operations = []
         self.frames = {}
-        self.script = Interpreter(self.world)
+        self.script = ScriptRuntime(self.world)
         self.world.script = self.script
         self.script.start()
         self.elapsed = 0.0
+
+    def close(self):
+        self.script.close()
 
     @classmethod
     def open(cls, path, seed=0, target_version="unspecified"):

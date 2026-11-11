@@ -1,4 +1,5 @@
 import { system, world } from '@minecraft/server';
+import './settings.js';
 
 system.beforeEvents.startup.subscribe((event) => {
   event.blockComponentRegistry.registerCustomComponent('workshop:toggle', {

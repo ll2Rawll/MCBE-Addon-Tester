@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcbe-addon-tester"
-version = "0.2.0"
+version = "0.3.0"
 description = "Independent Bedrock add-on simulation and MCP tools; no Minecraft or AI API required"
 requires-python = ">=3.11"
-dependencies = ["Pillow>=11,<13", "numpy>=1.26,<3", "nbtlib>=2.0.4,<3", "esprima==4.0.1"]
+dependencies = ["Pillow>=11,<13", "numpy>=1.26,<3", "nbtlib>=2.0.4,<3", "quickjs-ng==0.18.0.1"]
 
 [project.optional-dependencies]
 ai = ["mcp>=1.12,<2"]
@@ -24,7 +24,7 @@ mcbe-legacy-mcp = "mcbe_tester.legacy_mcp_server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-mcbe_tester = ["assets/*.js"]
+mcbe_tester = ["assets/*.js", "assets/*.cjs"]
 
 [tool.ruff]
 line-length = 110

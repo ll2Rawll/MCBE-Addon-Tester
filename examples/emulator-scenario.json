@@ -1,0 +1,34 @@
+{
+  "requirements": [
+    {"id":"form", "text":"Using a shard opens settings on the next tick; the title and initial values are available."},
+    {"id":"apply", "text":"Submitting lights the lamp, sets the robot's name and score, and creates a named shard in slot 1."},
+    {"id":"cancel", "text":"Cancelling a second form preserves the first settings and creates no second robot."}
+  ],
+  "steps": [
+    {"action":{"type":"give","identifier":"workshop:shard","count":1}},
+    {"action":{"type":"use"}},
+    {"action":{"type":"tick","ticks":1}},
+    {"assert":{"requirement":"form","path":"/player/menu","operator":"eq","expected":"form"}},
+    {"assert":{"requirement":"form","path":"/form/title","operator":"eq","expected":"Workshop controls"}},
+    {"assert":{"requirement":"form","path":"/form/controls/1/value","operator":"eq","expected":2}},
+    {"render":{}},
+    {"action":{"type":"form_input","index":0,"value":true}},
+    {"action":{"type":"form_input","index":1,"value":8}},
+    {"action":{"type":"form_input","index":2,"value":1}},
+    {"action":{"type":"form_input","index":3,"value":"Copper"}},
+    {"render":{}},
+    {"action":{"type":"key","key":"enter"}},
+    {"assert":{"requirement":"apply","path":"/blocks/0,0,0/states/workshop:lit","operator":"eq","expected":true}},
+    {"assert":{"requirement":"apply","path":"/entities/e1/nameTag","operator":"eq","expected":"Copper"}},
+    {"assert":{"requirement":"apply","path":"/scoreboard/workshop/scores/e1","operator":"eq","expected":8}},
+    {"assert":{"requirement":"apply","path":"/player/slots/1/nameTag","operator":"eq","expected":"Warm shard"}},
+    {"assert":{"requirement":"apply","path":"/player/menu","operator":"eq","expected":"game"}},
+    {"render":{}},
+    {"action":{"type":"use"}},
+    {"action":{"type":"tick","ticks":1}},
+    {"action":{"type":"key","key":"escape"}},
+    {"assert":{"requirement":"cancel","path":"/player/menu","operator":"eq","expected":"game"}},
+    {"assert":{"requirement":"cancel","path":"/entities/e2","operator":"exists","expected":false}},
+    {"assert":{"requirement":"cancel","path":"/scoreboard/workshop/scores/e1","operator":"eq","expected":8}}
+  ]
+}

@@ -227,12 +227,6 @@ wheels = [
 ]
 
 [[package]]
-name = "esprima"
-version = "4.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cc/a1/50fccd68a12bcfc27adfc9969c090286670a9109a0259f3f70943390b721/esprima-4.0.1.tar.gz", hash = "sha256:08db1a876d3c2910db9cfaeb83108193af5411fc3a3a66ebefacd390d21323ee", size = 47021, upload-time = "2018-08-24T13:59:11.374Z" }
-
-[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -316,14 +310,14 @@ wheels = [
 
 [[package]]
 name = "mcbe-addon-tester"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
-    { name = "esprima" },
     { name = "nbtlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pillow" },
+    { name = "quickjs-ng" },
 ]
 
 [package.optional-dependencies]
@@ -336,11 +330,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "esprima", specifier = "==4.0.1" },
     { name = "mcp", marker = "extra == 'ai'", specifier = ">=1.12,<2" },
     { name = "nbtlib", specifier = ">=2.0.4,<3" },
     { name = "numpy", specifier = ">=1.26,<3" },
     { name = "pillow", specifier = ">=11,<13" },
+    { name = "quickjs-ng", specifier = "==0.18.0.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.11,<1" },
 ]
 provides-extras = ["ai", "dev"]
@@ -857,6 +851,28 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/61/caa39686032d2ebdd04ff0ab5cbe163126c0066d98e00c9018646e42393b/pywin32-312-cp315-cp315-win32.whl", hash = "sha256:5c1fbe4a937a73ae9297384a3da38518cbc694c68ad8a809b2e19acd350f03ed", size = 6471159, upload-time = "2026-06-04T07:49:50.035Z" },
     { url = "https://files.pythonhosted.org/packages/0f/cd/7e1de64a4a6f69c04214169657ccab0d93a670ea50e35eb8f489d7378249/pywin32-312-cp315-cp315-win_amd64.whl", hash = "sha256:c2f03a0f73f804a13c2735b99392b0cd426bb4f2c4d0178e5ac966a0f21618d5", size = 7025293, upload-time = "2026-06-04T07:49:54.857Z" },
     { url = "https://files.pythonhosted.org/packages/23/ed/4532e9388e65fa16b46776ef47ad631a64eda1631884488af707666350ed/pywin32-312-cp315-cp315-win_arm64.whl", hash = "sha256:a8597d28f267b39074aef51fa593530082b39cbe5a074226096857b1fed2dfb9", size = 6840337, upload-time = "2026-06-04T07:49:57.531Z" },
+]
+
+[[package]]
+name = "quickjs-ng"
+version = "0.18.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/96/bc69a8f0196b19b59a65bd5379e7526d4306ecda26bcc46f9173e89eceaa/quickjs_ng-0.18.0.1.tar.gz", hash = "sha256:b634f4c7b778a9986c2d4bbfee4a55adab873f5a20bf7ee067659d9037f4898a", size = 552901, upload-time = "2026-11-05T01:08:07.061Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/9f/2e9f70464bcb4dd6cbad4189b76104d90f40f9a2565e593410df5edbd571/quickjs_ng-0.18.0.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:58cd67634eabea316521430334be6b5719793c5ef7ccf901e07c676c3a77bfb2", size = 530365, upload-time = "2026-11-05T01:07:32.996Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/7d/b43684bbd264ddd86c0446e30c2584ef2986a901890fafc23b65a8301d4b/quickjs_ng-0.18.0.1-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3a821d014f4e115ee98caf96632deb17de4f0aa4811c224733afee44f5c51630", size = 2473211, upload-time = "2026-11-05T01:07:35.142Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/8e/dcb261024e37481466f6873431995082a9e119879fc0f8d86c0b3ce31f91/quickjs_ng-0.18.0.1-cp310-abi3-manylinux2014_i686.manylinux_2_17_i686.manylinux_2_28_i686.whl", hash = "sha256:b6711af4a97050338e3f0ebebe1a580444d1b0bd3f2ded5bb2bd9e43938a5bfe", size = 2417672, upload-time = "2026-11-05T01:07:37.043Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/d4/8a65e2e8778aebb9ede9ae32406f54a45f74b0300b5640cf468bf65659ae/quickjs_ng-0.18.0.1-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:73aacdc5d46a7336caf59c929d7b7ec199a3d05163ac83eb7ef9b59cc80963ee", size = 2531426, upload-time = "2026-11-05T01:07:39.145Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/a7/b797b74fcfee2d6695c804f524f4b1fc78b37e1d937c6647aa32d587fe42/quickjs_ng-0.18.0.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:0b6e6b1c010d4886c3ebc899f8c80622cb07df00310b2b84104c3c17428ead79", size = 2457664, upload-time = "2026-11-05T01:07:40.992Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/4f/f0747d310dc9a0984d80914f347e41b1a718b6bcddefb870397c7e2f8776/quickjs_ng-0.18.0.1-cp310-abi3-musllinux_1_2_i686.whl", hash = "sha256:d62c8908f3e1d450d2630aabe25f4d39175df9aa23d674863a1f0daa90d2ca7b", size = 2446966, upload-time = "2026-11-05T01:07:43.046Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/72/84a0930603c261a9c8796a2fb07c8aababccaee95f083adddcb102c0a7b6/quickjs_ng-0.18.0.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:337ff6f4c7c9107a41101c56cdf75fcbf8e35d2697c0eb78ccf11aa850ff7e47", size = 2519399, upload-time = "2026-11-05T01:07:44.985Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/3f/73a0db3f2936f58103b243392132937dd7d9c0ef9039cb160a5b4565aeba/quickjs_ng-0.18.0.1-cp310-abi3-win32.whl", hash = "sha256:c5c17c496a4f395770d076e7e060c9e62a616341353dedd27b85ef3f453f75fb", size = 322962, upload-time = "2026-11-05T01:07:46.891Z" },
+    { url = "https://files.pythonhosted.org/packages/d7/9a/5c0a200771d8ffdd7cef010e80d18897cd5b78355c0f059c7ad3fd4a75d2/quickjs_ng-0.18.0.1-cp310-abi3-win_amd64.whl", hash = "sha256:3e34d04041a19d1629c5d03745a778da1b83a3a0fc16a5051fba34271ed171a2", size = 396401, upload-time = "2026-11-05T01:07:48.5Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/9c/0d06d88d528b28dad0bd91852ab86123e322096614fc0219c37747aeeec3/quickjs_ng-0.18.0.1-pp311-pypy311_pp80-macosx_11_0_arm64.whl", hash = "sha256:964b3aacba816797feb693bf7b6f2df21a7bfb28a295f1d7c98d40e291c7f9a6", size = 473029, upload-time = "2026-11-05T01:07:58.896Z" },
+    { url = "https://files.pythonhosted.org/packages/df/22/d441feb73c2517af299af8542c601b14579f068a0532611864162d4253d7/quickjs_ng-0.18.0.1-pp311-pypy311_pp80-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:fd48d68fad3900ca6bf8bee22bbbd0837d61882c780d85d5e96bc795dd0faa52", size = 522061, upload-time = "2026-11-05T01:08:00.442Z" },
+    { url = "https://files.pythonhosted.org/packages/78/db/4a0653e223b1b60ff0f5ddacbfac81d71a8945dae79b2ae6bdbcbc691729/quickjs_ng-0.18.0.1-pp311-pypy311_pp80-manylinux2014_i686.manylinux_2_17_i686.manylinux_2_28_i686.whl", hash = "sha256:c7c71d2436de837388730b55aeb701fa240a7a0503de817a00a1c6cfe1e28286", size = 599306, upload-time = "2026-11-05T01:08:02.278Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/1f/04fb9a69e746ac140dda4a435642c61973f9450deb48130111ce118d43c7/quickjs_ng-0.18.0.1-pp311-pypy311_pp80-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:db602d217d8936f707ed03716d774e17e333632483736cf97b4c94cb895bde46", size = 547042, upload-time = "2026-11-05T01:08:03.939Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/27/f54081d533b05dc79d216eff09c93dc2e1e25f74ec9ff3806df0082a9c60/quickjs_ng-0.18.0.1-pp311-pypy311_pp80-win_amd64.whl", hash = "sha256:2f46a1143b8b23a785325aa6edd97e2710d140e7bae2f15bf71c1d5b41e965ab", size = 457629, upload-time = "2026-11-05T01:08:05.476Z" },
 ]
 
 [[package]]

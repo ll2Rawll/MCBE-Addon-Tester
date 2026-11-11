@@ -4,7 +4,7 @@
 
 The assistant you already use supplies the reasoning. This program loads your add-on, simulates supported behavior, renders pack assets, accepts virtual controls, and returns evidence through MCP or a command line.
 
-**Version 0.2 is a working research prototype, not a complete Bedrock emulator.** It does not establish 95% or 100% compatibility with Minecraft. It cannot fully test arbitrary add-ons, native graphics, or native menus yet. Unsupported features appear in reports; `simulation_passed` applies only to assertions in the implemented model. Native compatibility remains `unverified`.
+**Version 0.3 expands the executable emulator, but is not a complete Bedrock implementation.** It does not establish 95% or 100% compatibility with Minecraft. It cannot fully test arbitrary add-ons, native graphics, or native menus yet. Unsupported features appear in reports; `simulation_passed` applies only to assertions in the implemented model. Native compatibility remains `unverified`.
 
 ![Independent simulator rendering of the included workshop fixture](docs/simulator-preview.png)
 
@@ -13,15 +13,18 @@ The assistant you already use supplies the reasoning. This program loads your ad
 | Area | Simulator behavior | Important boundary |
 | --- | --- | --- |
 | Packs | Folders, ZIP, `.mcpack`, nested `.mcaddon`, inline files; bounded archive handling and content hashes | Not a complete official schema validator |
-| Blocks | State combinations, Molang permutation conditions, material selection, placement, breaking, AABB collision | Simplified interactions; no redstone, fluids, native mining timing, or world generation |
-| Entities | Spawn, health initialization, component-group events, property changes, seeded event choices, basic gravity | No general mob AI or native combat system |
-| Items and recipes | Virtual inventory, block placers, shaped and shapeless 3×3 crafting | No full equipment, enchantment, durability, food, or item-use semantics |
-| Scripts | Restricted ES2017 interpreter; selected events, timers, dynamic properties, block permutations and custom block hooks | Not full JavaScript or the full Script API; unsupported syntax/APIs block results |
+| Blocks | States, Molang permutations, materials, placement/breaking, continuous AABB sweeps, separate ray selection boxes, scheduled custom ticks | No redstone, fluids, native mining timing, or world generation |
+| Entities | Spawn, health/damage events, tags, filtered queries, effects subset, component groups and filtered events, properties, seeded choices, gravity | No general mob AI, armor/invulnerability simulation, or full native combat |
+| Items and recipes | 36-slot player inventory, stacking, metadata, names/lore, durability data, entity containers, transfers, shaped/shapeless crafting and overflow rollback | No equipment/enchantments, automatic durability wear, hunger or food consumption |
+| Scripts | Isolated QuickJS; bundled ES modules, live exports, classes, destructuring, async/await, promises, generator jobs; selected Script APIs and custom hooks | API subset; scheduling/privileges approximate; dynamic compilation and external imports unsupported |
+| Commands and scores | Bounded command interpreter, selected selectors, objectives, named/entity participants and integer scores | Only documented command subset; no operating-system command execution |
 | Graphics | Pack textures on cuboids, bone hierarchies, rotations, UVs, linear keyframes, a Molang subset, basic animation controller transitions | Independent software preview; no RenderDragon, PBR, native lighting, or GPU parity |
-| Controls and menus | Virtual WASD, jump, look, clicks, hotbar, inventory and pause menus | Simulator menus and input model; custom JSON UI and Bedrock's actual menus remain unsupported |
+| Controls and menus | Virtual WASD, jump, look, clicks, hotbar icons, inventory/pause, async action/message/modal forms, pagination, editable fields and cancellation | Original simulator layout; custom JSON UI, controller/touch behavior and Bedrock's actual screens remain unsupported |
 | Evidence | State assertions, PNGs, animation sequences, reference-image comparisons, HTML/JSON reports, frozen input and replay traces | Simulation evidence is not native gameplay evidence |
 
 See [the exact boundaries](docs/LIMITATIONS.md), [research and design](docs/RESEARCH.md), and [the AI workflow](docs/AI-WORKFLOW.md).
+
+![Interactive emulator form generated from an add-on script](docs/emulator-form.png)
 
 ## Use it with your assistant
 
@@ -37,7 +40,7 @@ After connecting this tool to a compatible assistant, you can say:
 
 ### Install
 
-Python 3.11 or newer, on Windows, Linux, or macOS:
+Python 3.11+ and Node.js 20+ with npm, on Windows, Linux, or macOS. Node only bundles source; add-on code runs in the separate QuickJS worker. After installing dependencies, simulation runs offline.
 
 ```sh
 git clone https://github.com/ll2Rawll/MCBE-Addon-Tester.git
@@ -46,6 +49,7 @@ python -m venv .venv
 # Windows: .venv\Scripts\activate
 # Linux/macOS: source .venv/bin/activate
 python -m pip install -e ".[ai]"
+npm ci --prefix runtime
 bedrock-addon-tester capabilities
 ```
 
@@ -64,7 +68,7 @@ Register this server in a client that supports stdio MCP, substituting the absol
 }
 ```
 
-On Linux/macOS use `/absolute/path/MCBE-Addon-Tester/.venv/bin/python`. The repository also includes portable `plugin.json`, `mcp.json`, and a testing skill for plugin hosts supporting Agent Plugins 1.0 and `uv`. The portable plugin uses a local stdio process; it is not a hosted ChatGPT connection.
+On Linux/macOS use `/absolute/path/MCBE-Addon-Tester/.venv/bin/python`. The repository also includes portable `plugin.json`, `mcp.json`, and a testing skill for plugin hosts supporting Agent Plugins 1.0 and `uv`. Install the npm dependencies in the plugin directory before its first use. The portable plugin uses a local stdio process; it is not a hosted ChatGPT connection.
 
 ## Try the self-contained example
 
@@ -72,12 +76,13 @@ The workshop fixture includes original textures, a toggleable block, a scripted 
 
 ```sh
 bedrock-addon-tester test examples/simulator-addon --scenario examples/simulator-scenario.json --out .mcbe-sim/demo
+bedrock-addon-tester test examples/simulator-addon --scenario examples/emulator-scenario.json --out .mcbe-sim/forms
 bedrock-addon-tester render examples/simulator-addon --out .mcbe-sim/preview.png
 bedrock-addon-tester inspect path/to/your-addon.mcaddon
 bedrock-addon-tester explore path/to/your-addon.mcaddon
 ```
 
-The demonstration checks ten expectations: block state changes, menu navigation, recipe inputs/output, timer callbacks, an entity property, and collision. Those expectations exercise our model; they are not an independent accuracy benchmark against Bedrock.
+The original demonstration checks ten expectations around blocks, menus, recipes, timers, entities and collision. The new emulator scenario checks eleven expectations around asynchronous forms, field values, cancellation, named items, a robot and its scoreboard. Those expectations exercise our model; they are not an independent accuracy benchmark against Bedrock.
 
 An evidence directory contains `report.html`, `report.json`, PNGs, `input.zip`, and `replay.json`. Choose a new directory for each run. Reproduce a run with:
 
@@ -113,6 +118,7 @@ Actions do not create passing assertions. Untested requirements remain untested.
 
 ```sh
 python -m pip install -e ".[ai,dev]"
+npm ci --prefix runtime
 python -m unittest discover -v
 ruff check src tests tools/generate_simulator_fixture.py
 ruff format --check src tests tools/generate_simulator_fixture.py

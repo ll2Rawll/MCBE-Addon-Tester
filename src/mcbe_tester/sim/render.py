@@ -295,6 +295,27 @@ class Renderer:
                 )
             self.quad(points[list(indices)], [0, 0, texture.width, texture.height], texture, SHADE[name])
 
+    def item_texture(self, identifier):
+        components = self.catalog.items.get(identifier, {}).get("components", {})
+        icon = components.get("minecraft:icon")
+        if isinstance(icon, dict):
+            icon = icon.get("textures", {}).get("default", icon.get("texture"))
+        if icon:
+            return self.catalog.texture(icon, "item")
+        if identifier in self.catalog.blocks:
+            materials = self.catalog.block(identifier)[0].get("minecraft:material_instances", {})
+            return self.catalog.texture(materials.get("*", {}).get("texture", "<missing-material>"))
+        return self.catalog.texture("<missing-item-icon>", "item")
+
+    @staticmethod
+    def label(draw, rect, label, fill="white"):
+        label = str(label).replace("\n", " ")
+        available = max(0, rect[2] - rect[0] - 8)
+        # Keep the full label in inspect_state; clip text inside its visible hit region.
+        while label and draw.textlength(label) > available:
+            label = label[:-1]
+        draw.text((rect[0] + 4, rect[1] + 5), label, fill=fill)
+
     def geometry(self, geometry, position, texture_for, transforms=None, visibility=None, context=None):
         bones = {b["name"]: b for b in geometry.get("bones", [])}
         transforms, visibility, context = transforms or {}, visibility or {}, context or {}
@@ -399,6 +420,17 @@ class Renderer:
                 self.catalog.findings.unsupported("block-render", block["identifier"], str(exc))
         for entity in self.world.entities.values():
             try:
+                if "itemStack" in entity:
+                    texture = self.item_texture(entity["itemStack"]["typeId"])
+                    center = np.array(entity["position"]) + [0, 0.25, 0]
+                    points = np.array(
+                        [
+                            center + self.right * x + self.up * y
+                            for x, y in ((-0.2, -0.2), (0.2, -0.2), (0.2, 0.2), (-0.2, 0.2))
+                        ]
+                    )
+                    self.quad(points, [0, 0, texture.width, texture.height], texture)
+                    continue
                 desc = self.catalog.clients[entity["identifier"]]["description"]
                 geometries, textures = desc.get("geometry", {}), desc.get("textures", {})
                 geometry_id = geometries.get("default", next(iter(geometries.values()), None))
@@ -427,16 +459,48 @@ class Renderer:
                 outline=(115, 161, 172),
                 width=2,
             )
-            draw.text(
-                (self.width * 0.12, self.height * 0.16),
-                f"Simulator {self.world.player['menu']}",
-                fill="white",
+            form = self.world.forms.current
+            self.label(
+                draw,
+                [self.width * 0.12, self.height * 0.14, self.width * 0.8, self.height * 0.2],
+                form["title"] if form else f"Simulator {self.world.player['menu']}",
             )
+            if form:
+                self.label(
+                    draw,
+                    [self.width * 0.16, self.height * 0.21, self.width * 0.84, self.height * 0.27],
+                    form["body"],
+                    (180, 210, 220),
+                )
             for region in self.world.ui_regions():
                 a, b, c, d = region["rect"]
                 rect = [int(a * self.width), int(b * self.height), int(c * self.width), int(d * self.height)]
-                draw.rectangle(rect, fill=(52, 69, 81), outline=(130, 165, 173))
-                draw.text((rect[0] + 4, rect[1] + 5), str(region["label"])[:10], fill="white")
+                if region.get("kind") == "divider":
+                    draw.line(
+                        [rect[0], (rect[1] + rect[3]) // 2, rect[2], (rect[1] + rect[3]) // 2],
+                        fill=(130, 165, 173),
+                    )
+                    continue
+                if not region.get("disabled"):
+                    draw.rectangle(
+                        rect,
+                        fill=(52, 69, 81),
+                        outline=(240, 214, 108) if region.get("focused") else (130, 165, 173),
+                    )
+                label = region["label"]
+                if "value" in region:
+                    value = region.get("value_label", region["value"])
+                    if region.get("kind") == "toggle":
+                        value = "[x]" if value else "[ ]"
+                    label = f"{label}: {value}"
+                text_rect = rect.copy()
+                if region.get("icon"):
+                    icon = self.catalog.texture(region["icon"], "item").resize(
+                        (18, 18), Image.Resampling.NEAREST
+                    )
+                    image.paste(icon, (rect[0] + 3, rect[1] + 2), icon)
+                    text_rect[0] += 23
+                self.label(draw, text_rect, label)
         else:
             if self.camera == "player":
                 x, y = self.width // 2, self.height // 2
@@ -450,9 +514,22 @@ class Renderer:
                     outline=(240, 214, 108) if i == self.world.player["selected"] else (85, 110, 124),
                     width=2,
                 )
-                if i < len(self.world.player["hotbar"]):
+                if i < len(self.world.player["hotbar"]) and self.world.player["hotbar"][i]:
                     name = self.world.player["hotbar"][i]
-                    draw.text((x + 3, y + 4), name.split(":")[-1][:5], fill="white")
+                    icon = self.item_texture(name).resize((24, 24), Image.Resampling.NEAREST)
+                    image.paste(icon, (int(x + 4), int(y + 3)), icon)
+                    amount = self.world.player["slots"][i]["amount"]
+                    draw.text((x + 25, y + 23), str(amount), fill="white")
+            display = self.world.player.get("display", {})
+            from .forms import text
+
+            for key, y in (("title", 0.32), ("actionbar", 0.76)):
+                if key in display:
+                    self.label(
+                        draw,
+                        [self.width * 0.2, self.height * y, self.width * 0.8, self.height * (y + 0.07)],
+                        text(display[key], self.catalog.strings),
+                    )
         draw.rectangle([0, self.height - 12, self.width, self.height], fill=(13, 20, 30))
         draw.text(
             (7, self.height - 12),

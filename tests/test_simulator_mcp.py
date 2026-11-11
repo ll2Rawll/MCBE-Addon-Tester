@@ -55,6 +55,30 @@ class SimulatorMCPTests(unittest.IsolatedAsyncioTestCase):
             report = await client.call_tool("simulation_report", {"session_id": key})
             self.assertIsNone(payload(report)["accuracy_percent"])
             self.assertEqual(payload(report)["native_compatibility"], "unverified")
+            form = await client.call_tool(
+                "simulate_actions",
+                {
+                    "session_id": key,
+                    "actions": [
+                        {"type": "give", "identifier": "workshop:shard"},
+                        {"type": "use"},
+                        {"type": "tick"},
+                    ],
+                },
+            )
+            self.assertFalse(form.isError)
+            self.assertEqual(payload(form)["state"]["form"]["title"], "Workshop controls")
+            rendered_form = await client.call_tool("render_view", {"session_id": key})
+            self.assertFalse(rendered_form.isError)
+            self.assertTrue(any(item.type == "image" for item in rendered_form.content))
+            response = await client.call_tool(
+                "simulate_actions",
+                {
+                    "session_id": key,
+                    "actions": [{"type": "form_response", "values": [True, 8, 1, "MCP robot"]}],
+                },
+            )
+            self.assertEqual(payload(response)["state"]["scoreboard"]["workshop"]["scores"]["e1"], 8)
             await client.call_tool("close_session", {"session_id": key})
 
     async def test_inline_pack_needs_no_local_addon_path(self):
