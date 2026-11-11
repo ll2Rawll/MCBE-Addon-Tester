@@ -36,10 +36,10 @@ ENTITY_COMPONENTS = {
     "minecraft:collision_box",
     "minecraft:physics",
     "minecraft:type_family",
-    "minecraft:movement",
-    "minecraft:movement.basic",
-    "minecraft:nameable",
     "minecraft:inventory",
+    "minecraft:variant",
+    "minecraft:skin_id",
+    "minecraft:is_baby",
 }
 METADATA = {"format_version", "description"}
 
@@ -53,6 +53,7 @@ class Catalog:
         self.findings = Findings()
         self.blocks, self.items, self.entities, self.clients, self.recipes = {}, {}, {}, {}, {}
         self.geometries, self.animations, self.controllers = {}, {}, {}
+        self.render_controllers = {}
         self.terrain, self.icons, self.strings = {}, {}, {}
         self.scripts = []
         self.origins = {}
@@ -63,6 +64,12 @@ class Catalog:
             digest.update(name.encode() + b"\0" + hashlib.sha256(files[name]).digest())
         self.hash = digest.hexdigest()
         self._index()
+        from .audit import audit
+
+        try:
+            audit(self)
+        except (ValueError, TypeError, KeyError, AttributeError, RecursionError) as exc:
+            self.findings.error("feature-audit", "pack", str(exc))
 
     @classmethod
     def open(cls, source):
@@ -79,6 +86,15 @@ class Catalog:
         for pack in self.packs:
             prefix = pack["prefix"]
             for dep in pack["manifest"].get("dependencies", []):
+                if (
+                    dep.get("module_name") == "@minecraft/server"
+                    and str(dep.get("version", "")).split(".")[0] != "2"
+                ):
+                    self.findings.unsupported(
+                        "script-api-version",
+                        prefix,
+                        "This profile models v2 lifecycle rules; other API majors need a separate profile",
+                    )
                 if dep.get("uuid") and dep["uuid"] not in {p["uuid"] for p in self.packs}:
                     self.findings.unsupported(
                         "external-pack", prefix, f"Dependency not supplied: {dep['uuid']}"
@@ -170,12 +186,6 @@ class Catalog:
                                 "render_controllers",
                             }:
                                 self.feature(f"client-entity.{prop}", name, "unsupported")
-                            if desc.get("render_controllers"):
-                                self.findings.approximate(
-                                    "render-controllers",
-                                    name,
-                                    "Preview uses default geometry/texture; controller selection is not reproduced",
-                                )
                     for key in data:
                         if key.startswith("minecraft:recipe_"):
                             handled = True
@@ -191,6 +201,7 @@ class Catalog:
                         ("minecraft:geometry", self.geometries),
                         ("animations", self.animations),
                         ("animation_controllers", self.controllers),
+                        ("render_controllers", self.render_controllers),
                     ):
                         if key not in data:
                             continue
@@ -222,7 +233,7 @@ class Catalog:
             self.findings.approximate(
                 "script-scheduling",
                 "profile",
-                "QuickJS and bounded deterministic timers/jobs; native privileges, lifecycle ordering and per-version API differences are not fully reproduced",
+                "Modeled v2 execution phases with bounded QuickJS timers/jobs; exact native tick ordering, all method privileges and per-version API differences remain unverified",
             )
 
     def states(self, identifier):
@@ -331,7 +342,10 @@ class Catalog:
         return self.strings.get(value, value)
 
     def summary(self):
+        from .audit import coverage
+
         return {
+            "coverage": coverage(self),
             "content_sha256": self.hash,
             "packs": [{k: p[k] for k in ("name", "kind", "version")} for p in self.packs],
             "blocks": sorted(self.blocks),
@@ -340,6 +354,7 @@ class Catalog:
             "recipes": sorted(self.recipes),
             "geometries": sorted(self.geometries),
             "animations": sorted(self.animations),
+            "render_controllers": sorted(self.render_controllers),
             "script_entries": self.scripts,
             "features": self.occurrences,
             "findings": self.findings.rows(),

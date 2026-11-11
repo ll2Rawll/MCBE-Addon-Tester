@@ -53,9 +53,11 @@ def simulator_capabilities() -> dict:
             "entity component-group events",
             "isolated QuickJS, ES modules, classes, async/await, promises, generator jobs",
             "selected Script API, commands, queries, effects and scoreboards",
-            "Molang subset",
+            "Molang arithmetic, scopes, loops, structs, null coalescing and resource arrays",
             "textured cuboid geometry",
-            "linear skeletal animation and basic controller transitions",
+            "animation instance clocks, entry/exit expressions and position/rotation cross-fades",
+            "render-controller geometry, texture arrays, bone material/visibility rules and RGB tint",
+            "Script API v2 early/restricted/default execution phases",
             "slot inventories, item metadata, virtual input, inventory and pause menus",
             "async action/message/modal forms with clickable controls and pagination",
         ],
@@ -95,6 +97,15 @@ def simulator_capabilities() -> dict:
             "damage",
         ],
     }
+
+
+@server.tool()
+def run_conformance_suite(suite: dict | None = None) -> dict:
+    """Run bundled published-contract cases or an inline reference suite. Includes gaps in totals; never measures native accuracy."""
+    from .conformance import run_suite
+
+    with mutex:
+        return run_suite(suite)
 
 
 @server.tool()

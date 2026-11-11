@@ -159,6 +159,12 @@ class World(EntitySystem):
         if "minecraft:entity_spawned" in definition.get("events", {}):
             self.entity_event(entity_id, "minecraft:entity_spawned")
         self.dispatch("entitySpawn", {"entity_id": entity_id})
+        from .animations import active_animations
+
+        try:
+            active_animations(self, self.entities[entity_id])
+        except (ValueError, KeyError, TypeError) as exc:
+            self.catalog.findings.unsupported("animation-controller", identifier, str(exc))
         return entity_id
 
     def entity_event(self, entity_id, event):
@@ -249,6 +255,14 @@ class World(EntitySystem):
             "query.modified_move_speed": math.hypot(*[entity.get("velocity", [0, 0, 0])[i] for i in (0, 2)]),
             "query.is_moving": any(entity.get("velocity", [0, 0, 0])),
             "properties": entity.get("properties", {}),
+            "query.variant": entity.get("components", {}).get("minecraft:variant", {}).get("value", 0),
+            "query.skin_id": entity.get("components", {}).get("minecraft:skin_id", {}).get("value", 0),
+            "query.is_baby": "minecraft:is_baby" in entity.get("components", {}),
+            "query.is_sneaking": bool(entity.get("sneaking", False)),
+            "query.delta_time": 0.05,
+            "_molang_error": lambda message: self.catalog.findings.error(
+                "molang-runtime", entity.get("identifier", "world"), message
+            ),
         }
 
     def intersects(self, position, width=0.6, height=1.8):
@@ -524,10 +538,10 @@ class World(EntitySystem):
             if self.player["selected"] >= len(hotbar) or not hotbar[self.player["selected"]]:
                 raise ValueError("Selected slot is empty")
             item = hotbar[self.player["selected"]]
-            event = self.dispatch("before:itemUse", {"identifier": item, "cancel": False})
+            stack = self.inventory.api("get", "player", self.player["selected"])
+            event = self.dispatch("before:itemUse", {"identifier": item, "itemStack": stack, "cancel": False})
             if not event.get("cancel"):
-                self.dispatch("itemUse", {"identifier": item})
-                stack = self.inventory.api("get", "player", self.player["selected"])
+                self.dispatch("itemUse", {"identifier": item, "itemStack": stack})
                 self.custom_item(stack, "onUse")
                 if self.catalog.items.get(item, {}).get("components", {}).get("minecraft:food"):
                     raise Unsupported("Food consumption/hunger is not modeled")

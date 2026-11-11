@@ -33,4 +33,9 @@ in the plugin directory once to install the module compiler. A plain GitHub conn
    `simulation_passed` into a 95%/100% guarantee or latest-build compatibility.
    Missing features are engineering gaps, not proof that the add-on itself is wrong.
 
+`run_conformance_suite` checks selected documented contracts and retains unsupported
+cases in its totals. Use it to check the emulator itself when diagnosing fidelity.
+Its pass rate is not native accuracy; user-provided reference provenance remains
+unverified. Add-on coverage counts are detected fields, not all possible behavior.
+
 See the repository README and docs/AI-WORKFLOW.md for connection and scenario syntax.

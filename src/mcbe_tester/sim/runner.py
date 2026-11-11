@@ -282,6 +282,8 @@ class Simulation:
         }
 
     def report(self):
+        from .audit import coverage
+
         failed = any(a["status"] == "failed" for a in self.assertions)
         tested = {a["requirement"] for a in self.assertions}
         untested = sorted(set(self.requirements) - tested)
@@ -300,6 +302,7 @@ class Simulation:
             "requested_bedrock_version": self.target,
             "native_compatibility": "unverified",
             "accuracy_percent": None,
+            "coverage": coverage(self.catalog),
             "accuracy_note": "No native conformance corpus has established a compatibility percentage.",
             "overall": status,
             "content_sha256": self.catalog.hash,

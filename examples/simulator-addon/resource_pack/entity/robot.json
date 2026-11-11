@@ -3,6 +3,7 @@
   "minecraft:client_entity": {
     "description": {
       "identifier": "workshop:robot",
+      "render_controllers": ["controller.render.workshop.robot"],
       "materials": {
         "default": "entity_alphatest"
       },

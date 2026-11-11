@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "bedrock-addon-tester",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Independent Bedrock add-on simulation, rendered previews and reproducible tests. No Minecraft runtime or AI API key required. Partial emulator; native compatibility unverified.",
   "author": {"name": "ll2Rawll"},
   "repository": "https://github.com/ll2Rawll/MCBE-Addon-Tester",

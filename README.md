@@ -4,7 +4,9 @@
 
 The assistant you already use supplies the reasoning. This program loads your add-on, simulates supported behavior, renders pack assets, accepts virtual controls, and returns evidence through MCP or a command line.
 
-**Version 0.3 expands the executable emulator, but is not a complete Bedrock implementation.** It does not establish 95% or 100% compatibility with Minecraft. It cannot fully test arbitrary add-ons, native graphics, or native menus yet. Unsupported features appear in reports; `simulation_passed` applies only to assertions in the implemented model. Native compatibility remains `unverified`.
+**Version 0.4 improves the emulator's execution rules, rendering and animation, but is not a complete Bedrock implementation.** It does not establish 95% or 100% compatibility with Minecraft. It cannot fully test arbitrary add-ons, native graphics, or native menus yet. Unsupported features appear in reports; `simulation_passed` applies only to assertions in the implemented model. Native compatibility remains `unverified`.
+
+This release corrects early/before-event script access, manifest import checks, Molang control flow, animation clocks and stop/hold behavior, and geometry crossing the camera's near plane. Entity render controllers now choose geometry, textures, materials, visibility and tint. The scanner checks nested fields and unexecuted animation branches. A new [conformance tool](docs/CONFORMANCE.md) checks 50 explicit documented contracts: **47 match; 3 remain unsupported**. These selected, project-authored cases do not measure native Minecraft accuracy.
 
 ![Independent simulator rendering of the included workshop fixture](docs/simulator-preview.png)
 
@@ -16,9 +18,9 @@ The assistant you already use supplies the reasoning. This program loads your ad
 | Blocks | States, Molang permutations, materials, placement/breaking, continuous AABB sweeps, separate ray selection boxes, scheduled custom ticks | No redstone, fluids, native mining timing, or world generation |
 | Entities | Spawn, health/damage events, tags, filtered queries, effects subset, component groups and filtered events, properties, seeded choices, gravity | No general mob AI, armor/invulnerability simulation, or full native combat |
 | Items and recipes | 36-slot player inventory, stacking, metadata, names/lore, durability data, entity containers, transfers, shaped/shapeless crafting and overflow rollback | No equipment/enchantments, automatic durability wear, hunger or food consumption |
-| Scripts | Isolated QuickJS; bundled ES modules, live exports, classes, destructuring, async/await, promises, generator jobs; selected Script APIs and custom hooks | API subset; scheduling/privileges approximate; dynamic compilation and external imports unsupported |
+| Scripts | Isolated QuickJS; bundled ES modules, classes, async/await, generator jobs, `waitTicks`; selected APIs/hooks; v2 early/restricted/default phases; declared-import checks | API subset; exact native timing and all method/version privileges unverified; dynamic compilation/external imports unsupported |
 | Commands and scores | Bounded command interpreter, selected selectors, objectives, named/entity participants and integer scores | Only documented command subset; no operating-system command execution |
-| Graphics | Pack textures on cuboids, bone hierarchies, rotations, UVs, linear keyframes, a Molang subset, basic animation controller transitions | Independent software preview; no RenderDragon, PBR, native lighting, or GPU parity |
+| Graphics | Textured cuboids, bones/UVs, near-plane clipping; render-controller resource arrays, materials, visibility/tint; per-instance animation clocks, linear keyframes, rotation/position cross-fades | Independent software preview; no RenderDragon, PBR, native lighting, GPU parity, Catmull–Rom, or scale cross-fades |
 | Controls and menus | Virtual WASD, jump, look, clicks, hotbar icons, inventory/pause, async action/message/modal forms, pagination, editable fields and cancellation | Original simulator layout; custom JSON UI, controller/touch behavior and Bedrock's actual screens remain unsupported |
 | Evidence | State assertions, PNGs, animation sequences, reference-image comparisons, HTML/JSON reports, frozen input and replay traces | Simulation evidence is not native gameplay evidence |
 
@@ -80,9 +82,12 @@ bedrock-addon-tester test examples/simulator-addon --scenario examples/emulator-
 bedrock-addon-tester render examples/simulator-addon --out .mcbe-sim/preview.png
 bedrock-addon-tester inspect path/to/your-addon.mcaddon
 bedrock-addon-tester explore path/to/your-addon.mcaddon
+bedrock-addon-tester conformance --out .mcbe-sim/contracts.json
 ```
 
 The original demonstration checks ten expectations around blocks, menus, recipes, timers, entities and collision. The new emulator scenario checks eleven expectations around asynchronous forms, field values, cancellation, named items, a robot and its scoreboard. Those expectations exercise our model; they are not an independent accuracy benchmark against Bedrock.
+
+`conformance` exits **2** while its documented gaps remain. Its JSON records every case and source, including unsupported cases in the total. `--allow-unsupported` lets CI accept declared gaps while still failing on mismatches/errors; the report stays `incomplete`. An optional `--suite` accepts separate, explicit reference expectations.
 
 An evidence directory contains `report.html`, `report.json`, PNGs, `input.zip`, and `replay.json`. Choose a new directory for each run. Reproduce a run with:
 
@@ -94,7 +99,7 @@ CLI `test` exits with **0** for `simulation_passed`, **1** for failures, and **2
 
 ## AI tool operations
 
-`simulator_capabilities`, `load_addon`, `inspect_state`, `simulate_actions`, `assert_state`, `run_scenario`, `explore_permutations`, `render_view`, `render_animation`, `compare_render`, `simulation_report`, `export_evidence`, `close_session`.
+`simulator_capabilities`, `run_conformance_suite`, `load_addon`, `inspect_state`, `simulate_actions`, `assert_state`, `run_scenario`, `explore_permutations`, `render_view`, `render_animation`, `compare_render`, `simulation_report`, `export_evidence`, `close_session`.
 
 Each load returns an isolated session ID. `load_addon` accepts a local path or inline virtual files, including base64-encoded textures. The tools do not call OpenAI or another model provider. The default server exposes no desktop control or game-launch tools.
 

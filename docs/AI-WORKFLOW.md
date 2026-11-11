@@ -34,6 +34,10 @@ For precise scenario inputs use `{"type":"form_input","index":0,"value":true}`. 
 
 ## Interpreting results
 
+`run_conformance_suite` (CLI `conformance`) checks the emulator against 50 selected published-contract cases, or a supplied suite. Use it to diagnose model regressions. It is not a substitute for an add-on's own specification or a native compatibility benchmark. Its three known gaps remain in the total; a 47/50 result must never be presented as Minecraft accuracy. See [the reference format and provenance rules](CONFORMANCE.md).
+
+The add-on report's `coverage` counts detected modeled/unsupported content-field occurrences. It does not count all possible behavior. `detection_complete:false` and zero native reference cases remain explicit. Fix unsupported findings or report them unresolved; do not delete them to improve a score.
+
 - `simulation_passed`: recorded assertions passed in the implemented model, without detected blockers or untested declared requirements.
 - `failed`: an assertion failed or a modeled action/definition produced a detected error.
 - `incomplete`: unsupported behavior, missing assets, untested requirements, or no assertions prevent a complete result.

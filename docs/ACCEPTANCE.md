@@ -15,6 +15,12 @@ Acceptance checks implemented in this repository:
 - Slot copies, stack metadata, overflow rollback, invalid handles, scoreboard mutations and damage/effect events have regression checks.
 - Modal values, text input, pagination, busy dialogs and cancellation are tested through the simulator. A real MCP round trip opens a form, retrieves its PNG, submits it and observes a scoreboard update.
 - Thin collision barriers cannot be crossed by a large movement delta; selection ray tests use selection geometry separately from collision geometry.
+- V2 startup/before-event restrictions, late cancellation after await, waitTicks and per-pack declared imports are exercised with actual guest scripts.
+- Item count/name/lore bounds, restricted setters, metadata-preserving use events and independent clone metadata have regression checks.
+- Animation activation/re-entry clocks, stop/hold/loop behavior, keyframe discontinuities, entry/exit expressions, finished transitions and cross-fade weights have explicit expectations.
+- Render-controller array selection changes pixels; ordered visibility and missing/unsupported shaders are checked. Near-plane intersection retains visible triangle fragments.
+- An unexecuted state or unspawned entity still reports known unsupported nested fields and queries.
+- The packaged 50-case documented-contract suite must have zero unexpected mismatches/errors and retain the declared gaps. Every case remains in its denominator; it never reports native accuracy. CLI exit codes and non-overwriting evidence output are tested.
 
 Run `python -m unittest discover -v`, then the workshop scenario in the README. Windows and Linux CI execute the same checks. Passing these checks is a software release gate, **not** a native Bedrock acceptance gate.
 

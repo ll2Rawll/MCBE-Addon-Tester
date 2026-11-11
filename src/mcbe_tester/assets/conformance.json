@@ -1,0 +1,661 @@
+{
+  "schema_version": 1,
+  "name": "Published Bedrock contracts v1",
+  "checked_on": "2026-11-11",
+  "notice": "Original expectations derived from public documentation, not a representative or native game observation corpus. Known unsupported cases remain in totals.",
+  "sources": {
+    "syntax": "https://learn.microsoft.com/en-us/minecraft/creator/documents/molang/syntax-guide?view=minecraft-bedrock-stable",
+    "math": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/molangreference/examples/molangconcepts/mathfunctions?view=minecraft-bedrock-stable",
+    "animation": "https://learn.microsoft.com/en-us/minecraft/creator/documents/animations/animationsoverview?view=minecraft-bedrock-stable",
+    "privileges": "https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/execution-privilege?view=minecraft-bedrock-stable",
+    "system": "https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server/system?view=minecraft-bedrock-stable",
+    "forms": "https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/modalformdata?view=minecraft-bedrock-stable"
+  },
+  "cases": [
+    {
+      "id": "precedence",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "3+2*4",
+      "expected": 11
+    },
+    {
+      "id": "conditional-nesting",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "1?0?2:3:4",
+      "expected": 3
+    },
+    {
+      "id": "complex-no-return",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=4; v.x+7;",
+      "expected": 0
+    },
+    {
+      "id": "complex-return",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=4; return v.x+7;",
+      "expected": 11
+    },
+    {
+      "id": "identifiers-case",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "V.Answer=23; RETURN v.answer;",
+      "expected": 23
+    },
+    {
+      "id": "strings-case",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "'UP'=='up'",
+      "expected": false
+    },
+    {
+      "id": "coalesce-missing",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.missing ?? 12",
+      "expected": 12
+    },
+    {
+      "id": "coalesce-zero",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; return v.x ?? 12;",
+      "expected": 0
+    },
+    {
+      "id": "struct-storage",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.position.x=17; v.copy=v.position; return v.copy.x;",
+      "expected": 17
+    },
+    {
+      "id": "scope-assignment",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=1; (1)?{v.x=5;}; return v.x;",
+      "expected": 5
+    },
+    {
+      "id": "loop-sum",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; loop(5,{v.x=v.x+3;}); return v.x;",
+      "expected": 15
+    },
+    {
+      "id": "loop-break",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; loop(9,{v.x=v.x+1; (v.x==4)?{break;};}); return v.x;",
+      "expected": 4
+    },
+    {
+      "id": "loop-continue",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; v.y=0; loop(4,{v.x=v.x+1; (v.x==2)?{continue;};v.y=v.y+2;}); return v.y;",
+      "expected": 6
+    },
+    {
+      "id": "loop-limit",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; loop(2000,{v.x=v.x+1;}); return v.x;",
+      "expected": 1024
+    },
+    {
+      "id": "loop-return",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "loop(3,{return 8;}); return 1;",
+      "expected": 8
+    },
+    {
+      "id": "short-circuit-and",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; 0&&(v.x=1); return v.x;",
+      "expected": 0
+    },
+    {
+      "id": "short-circuit-or",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "v.x=0; 1||(v.x=1); return v.x;",
+      "expected": 0
+    },
+    {
+      "id": "zero-division",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "5/0",
+      "expected": 0
+    },
+    {
+      "id": "array-negative",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "array.parts[-2.8]",
+      "expected": "a",
+      "context": {
+        "array.parts": [
+          "a",
+          "b",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "array-cast-wrap",
+      "kind": "molang",
+      "source": "syntax",
+      "expression": "array.parts[5.9]",
+      "expected": "c",
+      "context": {
+        "array.parts": [
+          "a",
+          "b",
+          "c"
+        ]
+      }
+    },
+    {
+      "id": "sine-degrees",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.sin(90)",
+      "expected": 1
+    },
+    {
+      "id": "cosine-degrees",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.cos(180)",
+      "expected": -1
+    },
+    {
+      "id": "arcsine-degrees",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.asin(1)",
+      "expected": 90
+    },
+    {
+      "id": "atan2-quadrant",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.atan2(1,-1)",
+      "expected": 135
+    },
+    {
+      "id": "round-negative-half",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.round(-2.5)",
+      "expected": -3
+    },
+    {
+      "id": "truncate-negative",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.trunc(-2.9)",
+      "expected": -2
+    },
+    {
+      "id": "mod-negative",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.mod(-7,3)",
+      "expected": -1
+    },
+    {
+      "id": "clamp",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.clamp(20,2,8)",
+      "expected": 8
+    },
+    {
+      "id": "hermite-midpoint",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.hermite_blend(0.5)",
+      "expected": 0.5
+    },
+    {
+      "id": "copy-sign",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.copy_sign(5,-2)",
+      "expected": -5
+    },
+    {
+      "id": "minimum-angle",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.min_angle(370)",
+      "expected": 10
+    },
+    {
+      "id": "shortest-rotation",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.min_angle(math.lerprotate(350,10,0.5))",
+      "expected": 0
+    },
+    {
+      "id": "invalid-square-root",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.sqrt(-9)",
+      "expected": 0
+    },
+    {
+      "id": "pi",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.pi",
+      "expected": 3.141592653589793
+    },
+    {
+      "id": "ease-in-quad",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.ease_in_quad(0,8,0.5)",
+      "expected": 2
+    },
+    {
+      "id": "degenerate-random",
+      "kind": "molang",
+      "source": "math",
+      "expression": "math.random(7,7)",
+      "expected": 7
+    },
+    {
+      "id": "linear-middle",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": {
+        "0": [
+          0,
+          0,
+          0
+        ],
+        "2": [
+          20,
+          40,
+          60
+        ]
+      },
+      "time": 1,
+      "expected": [
+        10,
+        20,
+        30
+      ]
+    },
+    {
+      "id": "before-first-pre",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": {
+        "0.5": {
+          "pre": [
+            1
+          ],
+          "post": [
+            2
+          ]
+        },
+        "1": [
+          4
+        ]
+      },
+      "time": 0.25,
+      "expected": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "at-discontinuity",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": {
+        "0.5": {
+          "pre": [
+            1
+          ],
+          "post": [
+            2
+          ]
+        },
+        "1": [
+          4
+        ]
+      },
+      "time": 0.5,
+      "expected": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "id": "after-discontinuity",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": {
+        "0.5": {
+          "pre": [
+            1
+          ],
+          "post": [
+            2
+          ]
+        },
+        "1": [
+          4
+        ]
+      },
+      "time": 0.75,
+      "expected": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "uniform-scalar",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": 2,
+      "time": 0,
+      "expected": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "id": "uniform-vector",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": [
+        2
+      ],
+      "time": 0,
+      "expected": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "id": "catmullrom-constant",
+      "kind": "animation_channel",
+      "source": "animation",
+      "value": {
+        "0": {
+          "post": [
+            1
+          ],
+          "lerp_mode": "catmullrom"
+        },
+        "1": [
+          1
+        ]
+      },
+      "time": 0.5,
+      "expected": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "early-world-unavailable",
+      "kind": "scenario",
+      "area": "script",
+      "source": "privileges",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nlet rejected=false;try{world.getAllPlayers();}catch{rejected=true;}world.afterEvents.worldLoad.subscribe(()=>world.setDynamicProperty('rejected',rejected));"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "early-world-unavailable"
+          }
+        ],
+        "steps": [
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/rejected",
+              "operator": "eq",
+              "expected": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "startup-before-world-load",
+      "kind": "scenario",
+      "area": "script",
+      "source": "privileges",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nconst order=['module'];system.beforeEvents.startup.subscribe(()=>order.push('startup'));world.afterEvents.worldLoad.subscribe(()=>{order.push('worldLoad');world.setDynamicProperty('order',order.join(','));});"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "startup-before-world-load"
+          }
+        ],
+        "steps": [
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/order",
+              "operator": "eq",
+              "expected": "module,startup,worldLoad"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "restricted-write-deferred",
+      "kind": "scenario",
+      "area": "script",
+      "source": "privileges",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nlet blocked=false;world.beforeEvents.chatSend.subscribe(()=>{try{world.setDynamicProperty('write',1);}catch{blocked=true;}system.run(()=>world.setDynamicProperty('blocked',blocked));});"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "restricted-write-deferred"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "chat",
+              "message": "contract"
+            }
+          },
+          {
+            "action": {
+              "type": "tick"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/blocked",
+              "operator": "eq",
+              "expected": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "promise-default-phase",
+      "kind": "scenario",
+      "area": "script",
+      "source": "privileges",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nworld.beforeEvents.chatSend.subscribe(async()=>{await Promise.resolve();world.setDynamicProperty('continued',true);});"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "promise-default-phase"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "chat",
+              "message": "contract"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/continued",
+              "operator": "eq",
+              "expected": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait-ticks-resolves-at-deadline",
+      "kind": "scenario",
+      "area": "script",
+      "source": "system",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nsystem.waitTicks(3).then(()=>world.setDynamicProperty('resolved',system.currentTick));"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "wait-ticks-resolves-at-deadline"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "tick",
+              "ticks": 3
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/resolved",
+              "operator": "eq",
+              "expected": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "wait-ticks-invalid-delay",
+      "kind": "scenario",
+      "area": "script",
+      "source": "system",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nlet rejected=false;try{system.waitTicks(0);}catch{rejected=true;}world.afterEvents.worldLoad.subscribe(()=>world.setDynamicProperty('rejected',rejected));"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "wait-ticks-invalid-delay"
+          }
+        ],
+        "steps": [
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/rejected",
+              "operator": "eq",
+              "expected": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "modal-result-types",
+      "kind": "scenario",
+      "area": "script",
+      "source": "forms",
+      "files": {
+        "manifest.json": "{\"format_version\": 2, \"header\": {\"name\": \"Original contract fixture\", \"description\": \"Project-authored reference test\", \"uuid\": \"2579eacb-9da9-4778-8cfe-b391305c338c\", \"version\": [1, 0, 0], \"min_engine_version\": [1, 21, 100]}, \"modules\": [{\"type\": \"data\", \"uuid\": \"da7fc63b-417c-455a-a0e5-27f47ee1664d\", \"version\": [1, 0, 0]}, {\"type\": \"script\", \"language\": \"javascript\", \"entry\": \"scripts/main.js\", \"uuid\": \"28ed07da-8ec1-45da-b2c1-ec349e1bb117\", \"version\": [1, 0, 0]}], \"dependencies\": [{\"module_name\": \"@minecraft/server\", \"version\": \"2.0.0\"}, {\"module_name\": \"@minecraft/server-ui\", \"version\": \"2.0.0\"}]}",
+        "scripts/main.js": "import {world,system} from '@minecraft/server';\nimport {ModalFormData} from '@minecraft/server-ui';world.afterEvents.worldLoad.subscribe(async()=>{const r=await new ModalFormData().title('Contract').toggle('Enabled').textField('Label','Label').show(world.getAllPlayers()[0]);world.setDynamicProperty('enabled',r.formValues[0]);world.setDynamicProperty('label',r.formValues[1]);});"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "modal-result-types"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "form_response",
+              "values": [
+                true,
+                "Fixture"
+              ]
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/enabled",
+              "operator": "eq",
+              "expected": true
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/dynamic_properties/label",
+              "operator": "eq",
+              "expected": "Fixture"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

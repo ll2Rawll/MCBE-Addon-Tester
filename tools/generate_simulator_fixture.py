@@ -138,6 +138,7 @@ save(
             "description": {
                 "identifier": "workshop:robot",
                 "materials": {"default": "entity_alphatest"},
+                "render_controllers": ["controller.render.workshop.robot"],
                 "textures": {"default": "textures/entity/robot"},
                 "geometry": {"default": "geometry.workshop.robot"},
                 "animations": {
@@ -146,6 +147,19 @@ save(
                     "controller": "controller.animation.workshop.robot",
                 },
                 "scripts": {"animate": ["controller"]},
+            }
+        },
+    },
+)
+save(
+    "resource_pack/render_controllers/robot.json",
+    {
+        "format_version": "1.8.0",
+        "render_controllers": {
+            "controller.render.workshop.robot": {
+                "geometry": "Geometry.default",
+                "materials": [{"*": "Material.default"}],
+                "textures": ["Texture.default"],
             }
         },
     },

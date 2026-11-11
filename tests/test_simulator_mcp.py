@@ -21,6 +21,13 @@ class SimulatorMCPTests(unittest.IsolatedAsyncioTestCase):
             self.assertNotIn("launch_minecraft", names)
             caps = await client.call_tool("simulator_capabilities", {})
             self.assertFalse(payload(caps)["requires_minecraft"])
+            self.assertIn("run_conformance_suite", names)
+            contracts = await client.call_tool("run_conformance_suite", {})
+            self.assertFalse(contracts.isError)
+            self.assertGreaterEqual(payload(contracts)["total"], 50)
+            self.assertEqual(payload(contracts)["mismatch"], 0)
+            self.assertEqual(payload(contracts)["error"], 0)
+            self.assertIsNone(payload(contracts)["accuracy_percent"])
             source = Path(__file__).resolve().parents[1] / "examples/simulator-addon"
             loaded = await client.call_tool("load_addon", {"path": str(source)})
             self.assertFalse(loaded.isError)

@@ -66,7 +66,11 @@
     runJob(generator) {if(!generator || typeof generator.next!=='function') throw new TypeError('Expected generator');
       if(jobs.size>=64)throw new Error('Job limit'); const id=nextId++;jobs.set(id,generator);return id;},
     clearJob:id=>jobs.delete(id),
-    sendScriptEvent(id,message){emit('scriptEventReceive',{id,message,sourceType:'Server'});},
+    waitTicks(ticks) {
+      if(!Number.isInteger(ticks)||ticks<1)throw new Error('waitTicks requires a positive integer');
+      return new Promise(resolve=>schedule(resolve,ticks));
+    },
+    sendScriptEvent(id,message){rpc('scriptEvent',id,message);},
   });
   class BlockPermutation {
     constructor(id,states={}) {const value=rpc('permutation',id,states);this.type={id};this._states=value.states;this._components=value.components;}
@@ -102,24 +106,56 @@
     getComponent(id){return rpc('unsupported','block-component',id);}
   }
   class ItemStack {
-    constructor(type,amount=1) {this.typeId=typeof type==='string'?type:type.id;this.amount=amount;this.nameTag=undefined;this._lore=[];this._dynamic={};rpc('itemInfo',this.typeId);}
+    constructor(type,amount=1) {
+      this._typeId=typeof type==='string'?type:type.id;
+      const info=rpc('itemInfo',this.typeId);
+      if(!Number.isInteger(amount)||amount<1||amount>255)throw new Error('Item amount must be an integer from 1 to 255');
+      this._amount=Math.min(amount,info.maxAmount);this._nameTag=undefined;this._lore=[];this._dynamic={};
+    }
+    get typeId(){return this._typeId;}
+    get amount(){return this._amount;} set amount(value){
+      rpc('itemMutation');
+      if(!Number.isInteger(value)||value<1||value>255)throw new Error('Item amount must be an integer from 1 to 255');
+      this._amount=Math.min(value,this.maxAmount);
+    }
+    get nameTag(){return this._nameTag;} set nameTag(value){
+      rpc('itemMutation');
+      if(value!==undefined&&(typeof value!=='string'||value.length>255))throw new Error('Item nameTag must be a string of at most 255 characters');
+      this._nameTag=value||undefined;
+    }
     get type(){return {id:this.typeId};} get maxAmount(){return rpc('itemInfo',this.typeId).maxAmount;}
-    get isStackable(){return this.maxAmount>1;} getLore(){return [...this._lore];} setLore(lines){this._lore=[...lines];}
+    get isStackable(){return this.maxAmount>1&&!this.nameTag&&!this._lore.length&&!Object.keys(this._dynamic).length&&!this._damage;}
+    getLore(){return [...this._lore];} setLore(lines){
+      rpc('itemMutation');if(lines===undefined||lines==='')lines=[];
+      if(!Array.isArray(lines)||lines.length>20)throw new Error('Lore supports at most 20 lines');
+      if(lines.some(line=>typeof line!=='string'))rpc('unsupported','item-raw-lore','Only plain-string lore is modeled');
+      if(lines.some(line=>line.length>50))throw new Error('Lore lines support at most 50 characters');
+      this._lore=[...lines];
+    }
     clone(){return ItemStack._from(this._json());}
     getTags(){return rpc('itemInfo',this.typeId).tags;} hasTag(tag){return this.getTags().includes(tag);}
-    setDynamicProperty(k,v){if(v===undefined)delete this._dynamic[k];else this._dynamic[k]=v;}
-    getDynamicProperty(k){return this._dynamic[k];} getDynamicPropertyIds(){return Object.keys(this._dynamic);}
-    isStackableWith(other){return other instanceof ItemStack && JSON.stringify({...this._json(),amount:1})===JSON.stringify({...other._json(),amount:1});}
+    setDynamicProperty(k,v){
+      if(this.maxAmount!==1)throw new Error('Dynamic properties require a non-stackable item type');
+      if(typeof k!=='string'||!k||k.length>256)throw new Error('Invalid dynamic property identifier');
+      const vector=v&&typeof v==='object'&&Object.keys(v).length===3&&['x','y','z'].every(n=>typeof v[n]==='number'&&Number.isFinite(v[n]));
+      if(v!==undefined&&!(typeof v==='boolean'||typeof v==='string'||(typeof v==='number'&&Number.isFinite(v))||vector))throw new Error('Invalid dynamic property value');
+      if(v===undefined)delete this._dynamic[k];else this._dynamic[k]=vector?{...v}:v;
+    }
+    getDynamicProperty(k){const v=this._dynamic[k];return v&&typeof v==='object'?{...v}:v;} getDynamicPropertyIds(){return Object.keys(this._dynamic);}
+    isStackableWith(other){
+      const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
+      return other instanceof ItemStack&&this.maxAmount>1&&other.maxAmount>1&&JSON.stringify(canonical({...this._json(),amount:1}))===JSON.stringify(canonical({...other._json(),amount:1}));
+    }
     getComponent(id) {
       id=id.replace(/^minecraft:/,''); const info=rpc('itemInfo',this.typeId);
       if(id==='durability' && info.durability){const self=this;return {typeId:'minecraft:durability',maxDurability:info.durability,
-        get damage(){return self._damage||0;},set damage(value){if(!Number.isInteger(value)||value<0||value>info.durability)throw new Error('Invalid durability');self._damage=value;}};}
+        get damage(){return self._damage||0;},set damage(value){rpc('itemMutation');if(!Number.isInteger(value)||value<0||value>info.durability)throw new Error('Invalid durability');self._damage=value;}};}
       if(id==='food' && info.food)return {typeId:'minecraft:food',...info.food};
       if(!['durability','food'].includes(id))rpc('unsupported','item-component',id);
       return undefined;
     }
     _json(){return {typeId:this.typeId,amount:this.amount,nameTag:this.nameTag,lore:this._lore,dynamic:this._dynamic,damage:this._damage||0};}
-    static _from(data){if(!data)return undefined;const value=new ItemStack(data.typeId,data.amount);value.nameTag=data.nameTag;value._lore=data.lore||[];value._dynamic=data.dynamic||{};value._damage=data.damage||0;return value;}
+    static _from(data){if(!data)return undefined;const value=new ItemStack(data.typeId,data.amount);value._nameTag=data.nameTag;value._lore=[...(data.lore||[])];value._dynamic=JSON.parse(JSON.stringify(data.dynamic||{}));value._damage=data.damage||0;return value;}
   }
   class Container {
     constructor(owner){this.owner=owner;}
@@ -210,15 +246,15 @@
     removeObjective(id){return rpc('scoreboard','remove',id?.id||id);},
   });
   const world = Object.freeze({
-    beforeEvents:events(eventNames.before,'before:'), afterEvents:events(eventNames.after),scoreboard,
-    getDimension:id=>new Dimension(id),getAllPlayers:()=>[new Player('player')],getPlayers:(options={})=>rpc('queryEntities',options,true).map(entity),
+    beforeEvents:events(eventNames.before,'before:'), afterEvents:events(eventNames.after),get scoreboard(){rpc('worldReady');return scoreboard;},
+    getDimension:id=>{rpc('worldReady');return new Dimension(id);},getAllPlayers:()=>rpc('queryEntities',{},true).map(entity),getPlayers:(options={})=>rpc('queryEntities',options,true).map(entity),
     getEntity:id=>rpc('entity','valid',id)?entity(id):undefined,
     sendMessage:message=>rpc('message',message,null),
     getDynamicProperty:key=>rpc('dynamic','get','world',key)??undefined,
     setDynamicProperty:(key,value)=>rpc('dynamic',value===undefined?'delete':'set','world',key,value),
     getDynamicPropertyIds:()=>rpc('dynamic','keys','world'),clearDynamicProperties:()=>rpc('dynamic','clear','world'),
     getTimeOfDay:()=>rpc('time','get'),setTimeOfDay:value=>rpc('time','set',value),
-    getAbsoluteTime:()=>currentTick,getDay:()=>Math.floor(currentTick/24000),
+    getAbsoluteTime:()=>{rpc('worldReady');return currentTick;},getDay:()=>{rpc('worldReady');return Math.floor(currentTick/24000);},
   });
   class BaseForm {
     constructor(kind){this._data={kind,title:'',body:'',controls:[]};}
@@ -244,7 +280,7 @@
     header(text){this._data.controls.push({type:'header',text});return this;}label(text){this._data.controls.push({type:'label',text});return this;}
     divider(){this._data.controls.push({type:'divider'});return this;}
   }
-  globalThis.console=Object.freeze(Object.fromEntries(['log','warn','error','info','debug'].map(level=>[level,(...args)=>rpc('message',args.map(a=>typeof a==='string'?a:JSON.stringify(a)).join(' '),null)])));
+  globalThis.console=Object.freeze(Object.fromEntries(['log','warn','error','info','debug'].map(level=>[level,(...args)=>rpc('console',args.map(a=>typeof a==='string'?a:JSON.stringify(a)).join(' '),null)])));
   Math.random=()=>rpc('random');
   // Deterministic simulation clock. No wall-clock observation is used in replay.
   const NativeDate=Date;globalThis.Date=class extends NativeDate {constructor(...args){super(...(args.length?args:[currentTick*50]));}static now(){return currentTick*50;}};
@@ -269,6 +305,7 @@
       return JSON.stringify(errors);
     } else if(op==='startup'){
       emit('startup',{blockComponentRegistry:componentRegistry(blockComponents),itemComponentRegistry:componentRegistry(itemComponents)});
+    } else if(op==='worldLoad'){
       emit('worldLoad',{});emit('playerSpawn',{player:new Player('player'),initialSpawn:true});
     } else if(op==='tick'){
       currentTick=data;

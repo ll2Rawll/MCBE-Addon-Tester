@@ -55,6 +55,8 @@ def main():
                 value = None
             else:
                 value = dispatch(message["op"], json.dumps(message.get("data"), allow_nan=False))
+                if message["op"] == "event" and message["data"]["name"].startswith("before:"):
+                    rpc("_endRestricted", "[]")
             jobs = 0
             while context.execute_pending_job():
                 jobs += 1

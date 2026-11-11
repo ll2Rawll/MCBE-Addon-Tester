@@ -26,6 +26,8 @@ jobs:
       - run: python -m unittest discover -v
       - run: ruff check src tests tools/generate_simulator_fixture.py
       - run: ruff format --check src tests tools/generate_simulator_fixture.py
+      - name: Check published contracts and preserve unsupported cases
+        run: mcbe-test conformance --allow-unsupported --out conformance-evidence.json
       - name: Run independent simulator without Minecraft
         run: mcbe-test test examples/simulator-addon --scenario examples/simulator-scenario.json --out simulator-evidence
       - name: Exercise forms, inventory, scripts and scoreboards
@@ -36,7 +38,7 @@ jobs:
         shell: bash
         run: |
           python -m pip wheel . --no-deps -w dist
-          python -c "import glob,zipfile; z=zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert all('mcbe_tester/'+p in z.namelist() for p in ['assets/observer.js','assets/bedrock_api.js','assets/bundle.cjs','sim/mcp.py','sim/js_worker.py'])"
+          python -c "import glob,zipfile; z=zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert all('mcbe_tester/'+p in z.namelist() for p in ['assets/observer.js','assets/bedrock_api.js','assets/bundle.cjs','assets/conformance.json','sim/mcp.py','sim/js_worker.py','sim/conformance.py'])"
       - uses: actions/upload-artifact@v4
         with:
           name: simulator-evidence-${{ matrix.os }}
@@ -44,3 +46,4 @@ jobs:
             simulator-evidence/
             emulator-evidence/
             replay-evidence/
+            conformance-evidence.json

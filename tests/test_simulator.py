@@ -42,7 +42,7 @@ class MolangTests(unittest.TestCase):
         self.assertTrue(evaluate("q.block_state('workshop:lit')", {"states": {"workshop:lit": True}}))
 
     def test_unknown_query_and_python_syntax_block(self):
-        for expression in ("q.is_swimming", "__import__('os')", "[1,2]", "1 / 0"):
+        for expression in ("q.is_swimming", "__import__('os')", "[1,2]"):
             with self.subTest(expression=expression), self.assertRaises(Unsupported):
                 evaluate(expression)
 
@@ -243,7 +243,7 @@ class ScriptBoundaryTests(unittest.TestCase):
             files["behavior_pack/scripts/helpers.js"] = b"export function answer() { return 42; }"
 
         sim = simulation(
-            "import {world} from '@minecraft/server'; import {answer} from './helpers.js'; world.setDynamicProperty('answer', answer());",
+            "import {world} from '@minecraft/server'; import {answer} from './helpers.js'; world.afterEvents.worldLoad.subscribe(()=>world.setDynamicProperty('answer', answer()));",
             mutate,
         )
         self.assertFalse(sim.script.broken)

@@ -9,7 +9,14 @@ from tests.test_simulator import simulation
 
 
 class RuntimeTests(unittest.TestCase):
-    def sim(self, source, mutate=None):
+    def sim(self, source, mutate=None, ready=True):
+        # Most API tests need a loaded world; run their module continuation after
+        # the actual v2 worldLoad event instead of granting test-only privileges.
+        if ready:
+            source = (
+                "import {world as lifecycleWorld} from '@minecraft/server'; await new Promise(resolve=>lifecycleWorld.afterEvents.worldLoad.subscribe(resolve));\n"
+                + source
+            )
         result = simulation(source, mutate)
         self.addCleanup(result.close)
         return result
@@ -188,6 +195,7 @@ class RuntimeTests(unittest.TestCase):
             }));
         """,
             mutate,
+            ready=False,
         )
         s.action({"type": "set_block", "identifier": "workshop:lamp", "position": [0, 0, 0]})
         s.action({"type": "tick", "ticks": 6})

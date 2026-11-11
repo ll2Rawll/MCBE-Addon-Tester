@@ -6,8 +6,12 @@ import math
 import numpy as np
 from PIL import Image, ImageDraw
 
+from .animations import active_animations as active_animations
+from .animations import channel as channel
+from .animations import pose
 from .diagnostics import Unsupported
 from .molang import evaluate
+from .render_controllers import layers
 
 FACES = {
     "north": (0, 1, 2, 3),
@@ -27,129 +31,6 @@ def rotation(angles):
     ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
     rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
     return rz @ ry @ rx
-
-
-def channel(value, time, context, variables, default):
-    if isinstance(value, dict):
-        frames = sorted((float(t), v) for t, v in value.items())
-        if not frames:
-            return np.array(default, dtype=float)
-        before, after = frames[0], frames[-1]
-        for frame in frames:
-            if frame[0] <= time:
-                before = frame
-            if frame[0] >= time:
-                after = frame
-                break
-
-        def endpoint(value, side):
-            if isinstance(value, dict):
-                if value.get("lerp_mode", "linear") != "linear":
-                    raise Unsupported("Only linear animation interpolation is implemented")
-                value = value.get(side, value.get("post", value.get("pre", default)))
-            return channel(value, time, context, variables, default)
-
-        a, b = endpoint(before[1], "post"), endpoint(after[1], "pre")
-        alpha = max(0, min(1, (time - before[0]) / (after[0] - before[0]))) if after[0] != before[0] else 0
-        return a * (1 - alpha) + b * alpha
-    if not isinstance(value, list):
-        value = [value] * 3
-    if len(value) != 3:
-        raise ValueError("Animation channel needs three components")
-    return np.array([float(evaluate(v, context, variables)) for v in value])
-
-
-def active_animations(world, entity):
-    """A controller is advanced once per simulation tick, not per screenshot."""
-    if entity.get("_animation_tick") == world.tick:
-        return entity.get("_animations", [])
-    entity["_animation_tick"] = world.tick
-    desc = world.catalog.clients.get(entity["identifier"], {}).get("description", {})
-    context, variables = world.context(entity), entity["variables"]
-    scripts = desc.get("scripts", {})
-    for key in set(scripts) - {"animate", "pre_animation", "initialize"}:
-        world.catalog.findings.unsupported("client-script", entity["identifier"], key)
-    if not entity.get("_animation_initialized"):
-        for expression in scripts.get("initialize", []):
-            evaluate(expression, context, variables)
-        entity["_animation_initialized"] = True
-    for expression in scripts.get("pre_animation", []):
-        evaluate(expression, context, variables)
-    aliases = desc.get("animations", {})
-    result = []
-
-    def resolve(name, weight=1, depth=0):
-        if depth > 8 or len(result) > 64:
-            raise Unsupported("Animation expansion limit")
-        name = aliases.get(name, name)
-        if name in world.catalog.animations:
-            result.append((name, weight))
-            return
-        if name not in world.catalog.controllers:
-            raise Unsupported(f"Animation/controller not supplied: {name}")
-        controller = world.catalog.controllers[name]
-        current = entity["controllers"].setdefault(name, controller.get("initial_state", "default"))
-        states = controller["states"]
-        state = states[current]
-        for key in set(state) - {"animations", "transitions"}:
-            world.catalog.findings.unsupported("controller-state-feature", name, key)
-        for transition in state.get("transitions", []):
-            target, condition = next(iter(transition.items()))
-            if evaluate(condition, context, variables):
-                if target not in states:
-                    raise ValueError(f"Missing animation state {target}")
-                entity["controllers"][name] = current = target
-                break
-        for animation in states[current].get("animations", []):
-            if isinstance(animation, dict):
-                for key, condition in animation.items():
-                    value = evaluate(condition, context, variables)
-                    if value:
-                        resolve(key, weight * value, depth + 1)
-            else:
-                resolve(animation, weight, depth + 1)
-
-    for value in scripts.get("animate", []):
-        if isinstance(value, dict):
-            for name, condition in value.items():
-                weight = evaluate(condition, context, variables)
-                if weight:
-                    resolve(name, weight)
-        else:
-            resolve(value)
-    entity["_animations"] = result
-    return result
-
-
-def pose(world, entity):
-    out = {}
-    for name, weight in active_animations(world, entity):
-        animation = world.catalog.animations[name]
-        for key in set(animation) - {"bones", "animation_length", "loop", "override_previous_animation"}:
-            world.catalog.findings.unsupported("animation-feature", name, key)
-        if animation.get("override_previous_animation"):
-            world.catalog.findings.unsupported("animation-override", name)
-        length = animation.get("animation_length", 1)
-        time = entity["age"] / 20
-        if animation.get("loop") is True and length > 0:
-            time %= length
-        elif animation.get("loop") not in (None, False, "hold_on_last_frame"):
-            raise Unsupported("Expression animation loops are not modeled")
-        else:
-            time = min(time, length)
-        context = {**world.context(entity), "query.anim_time": time}
-        for bone, channels in animation.get("bones", {}).items():
-            target = out.setdefault(
-                bone, {"rotation": np.zeros(3), "position": np.zeros(3), "scale": np.ones(3)}
-            )
-            for name, default in (("rotation", [0, 0, 0]), ("position", [0, 0, 0]), ("scale", [1, 1, 1])):
-                if name in channels:
-                    value = channel(channels[name], time, context, entity["variables"], default)
-                    if name == "scale":
-                        target[name] *= 1 + (value - 1) * weight
-                    else:
-                        target[name] += value * weight
-    return out
 
 
 def corners(origin, size, inflate=0):
@@ -226,8 +107,7 @@ class Renderer:
         relative = vertices - self.origin
         x, y, z = relative @ self.right, relative @ self.up, relative @ self.forward
         if self.camera == "player":
-            # Near-plane crossing is omitted and explicitly approximate in the profile.
-            if np.any(z <= 0.05):
+            if np.any(z < 0.05 - 1e-9):
                 return None
             scale = self.width / (2 * math.tan(math.radians(70 / 2))) / z
         else:
@@ -235,6 +115,29 @@ class Renderer:
         return np.column_stack([self.width / 2 + x * scale, self.height / 2 - y * scale, z])
 
     def triangle(self, vertices, uv, texture, shade):
+        if self.camera != "player":
+            return self.raster_triangle(vertices, uv, texture, shade)
+        # Clip in world space, interpolating UVs at the near-plane intersections.
+        polygon = list(zip(vertices, uv, strict=True))
+        clipped = []
+        for i, (point, tex) in enumerate(polygon):
+            previous, previous_uv = polygon[i - 1]
+            z = float((point - self.origin) @ self.forward)
+            previous_z = float((previous - self.origin) @ self.forward)
+            if (z >= 0.05) != (previous_z >= 0.05):
+                amount = (0.05 - previous_z) / (z - previous_z)
+                clipped.append(
+                    (previous + amount * (point - previous), previous_uv + amount * (tex - previous_uv))
+                )
+            if z >= 0.05:
+                clipped.append((point, tex))
+        for i in range(1, len(clipped) - 1):
+            tri = [clipped[0], clipped[i], clipped[i + 1]]
+            self.raster_triangle(
+                np.array([p for p, _ in tri]), np.array([uv for _, uv in tri]), texture, shade
+            )
+
+    def raster_triangle(self, vertices, uv, texture, shade):
         projected = self.project(vertices)
         if projected is None:
             return
@@ -316,7 +219,17 @@ class Renderer:
             label = label[:-1]
         draw.text((rect[0] + 4, rect[1] + 5), label, fill=fill)
 
-    def geometry(self, geometry, position, texture_for, transforms=None, visibility=None, context=None):
+    def geometry(
+        self,
+        geometry,
+        position,
+        texture_for,
+        transforms=None,
+        visibility=None,
+        context=None,
+        materials=None,
+        yaw=0,
+    ):
         bones = {b["name"]: b for b in geometry.get("bones", [])}
         transforms, visibility, context = transforms or {}, visibility or {}, context or {}
         matrices = {}
@@ -363,9 +276,13 @@ class Renderer:
                     pivot = np.array(cube.get("pivot", [0, 0, 0]))
                     points = (points - pivot) @ rotation(cube["rotation"]).T + pivot
                 m = matrix(name)
-                points = (points @ m[:3, :3].T + m[:3, 3]) / 16 + np.array(position)
+                points = (points @ m[:3, :3].T + m[:3, 3]) / 16
+                points = points @ rotation([0, -yaw, 0]).T + np.array(position)
                 for face, (uv, material) in uv_faces(cube).items():
                     texture = texture_for(material)
+                    if materials and materials.get(name) == "entity":
+                        texture = texture.copy()
+                        texture.putalpha(255)
                     u, v, w, h = uv
                     uv = [
                         u * texture.width / texture_width,
@@ -431,19 +348,21 @@ class Renderer:
                     )
                     self.quad(points, [0, 0, texture.width, texture.height], texture)
                     continue
-                desc = self.catalog.clients[entity["identifier"]]["description"]
-                geometries, textures = desc.get("geometry", {}), desc.get("textures", {})
-                geometry_id = geometries.get("default", next(iter(geometries.values()), None))
-                texture_name = textures.get("default", next(iter(textures.values()), None))
-                if geometry_id not in self.catalog.geometries:
-                    raise Unsupported(f"Client geometry missing: {geometry_id}")
-                texture = self.catalog.texture(texture_name, "entity")
-                self.geometry(
-                    self.catalog.geometries[geometry_id],
-                    entity["position"],
-                    lambda _, texture=texture: texture,
-                    pose(self.world, entity),
-                )
+                transforms = pose(self.world, entity)
+                selected = layers(self.world, entity)
+                for layer in selected:
+                    texture = self.catalog.texture(layer["texture"], "entity")
+                    tinted = np.array(texture).astype(float) * np.array(layer["tint"])
+                    texture = Image.fromarray(np.clip(tinted, 0, 255).astype(np.uint8))
+                    self.geometry(
+                        self.catalog.geometries[layer["geometry"]],
+                        entity["position"],
+                        lambda _, texture=texture: texture,
+                        transforms,
+                        visibility=layer["visibility"],
+                        materials=layer["materials"],
+                        yaw=entity.get("yaw", 0),
+                    )
             except (ValueError, KeyError, TypeError, ArithmeticError) as exc:
                 self.catalog.findings.unsupported("entity-render", entity["identifier"], str(exc))
         image = Image.fromarray(self.pixels)

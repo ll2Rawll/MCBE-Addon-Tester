@@ -16,6 +16,16 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("capabilities")
     sub.add_parser("mcp", help="Run the simulator MCP tools over stdio")
+    contract = sub.add_parser(
+        "conformance", help="Check explicit published contracts, not native compatibility"
+    )
+    contract.add_argument("--suite", help="Optional JSON suite with independently supplied expectations")
+    contract.add_argument("--out", help="Write a new JSON evidence file")
+    contract.add_argument(
+        "--allow-unsupported",
+        action="store_true",
+        help="Exit zero for declared coverage gaps; never ignore mismatches/errors",
+    )
     for name in ("inspect", "explore", "render", "test"):
         command = sub.add_parser(name)
         command.add_argument("addon")
@@ -48,6 +58,29 @@ def main():
         return
     sim = None
     try:
+        if args.command == "conformance":
+            from .conformance import run_suite
+
+            suite = None
+            if args.suite:
+                if Path(args.suite).stat().st_size > 2 * 1024 * 1024:
+                    raise ValueError("Conformance suite exceeds 2 MiB")
+                suite = json.loads(Path(args.suite).read_text(encoding="utf-8"))
+            result = run_suite(suite)
+            encoded = json.dumps(result, indent=2, allow_nan=False)
+            if args.out:
+                destination = Path(args.out)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with destination.open("x", encoding="utf-8") as handle:
+                    handle.write(encoded + "\n")
+            print(encoded)
+            sys.exit(
+                1
+                if result["overall"] == "failed"
+                else 2
+                if result["overall"] == "incomplete" and not args.allow_unsupported
+                else 0
+            )
         sim = Simulation.open(args.addon, args.seed, args.target_version)
         if args.command == "inspect":
             result = sim.catalog.summary()

@@ -12,6 +12,7 @@ import weakref
 from pathlib import Path
 
 from .diagnostics import Unsupported
+from .privileges import check
 from .world import vector
 
 SERVER_EXPORTS = "world system Block BlockPermutation Entity Player Dimension ItemStack GameMode Direction EntityDamageCause ItemTypes".split()
@@ -76,6 +77,13 @@ def bundle(catalog):
         "entries": catalog.scripts,
         "files": files,
         "roots": [p["prefix"] for p in catalog.packs if p["kind"] == "behavior"],
+        "dependencies": {
+            p["prefix"]: [
+                d["module_name"] for d in p["manifest"].get("dependencies", []) if "module_name" in d
+            ]
+            for p in catalog.packs
+            if p["kind"] == "behavior"
+        },
         "builtins": builtins,
     }
     try:
@@ -114,6 +122,8 @@ class ScriptRuntime:
         self.registry = {"block": {}, "item": {}}
         self.inbox = queue.Queue()
         self.finalizer = None
+        self.phase = "early"
+        self.operation = "boot"
 
     def close(self):
         if self.finalizer and self.finalizer.alive:
@@ -152,6 +162,7 @@ class ScriptRuntime:
             self.call("boot", code=code, bootstrap=(ASSETS / "bedrock_api.js").read_text(encoding="utf-8"))
             if not self.broken:
                 self.call("startup")
+                self.call("worldLoad")
         except (Unsupported, ValueError, OSError) as exc:
             self.fail(str(exc), unsupported=isinstance(exc, Unsupported))
 
@@ -162,6 +173,15 @@ class ScriptRuntime:
             self.deferred.append((op, data))
             return None
         self.active = True
+        previous_phase, previous_operation = self.phase, self.operation
+        self.operation = op
+        self.phase = (
+            "early"
+            if op in {"boot", "startup"}
+            else "restricted"
+            if op == "event" and data["name"].startswith("before:")
+            else "default"
+        )
         deadline = time.monotonic() + 3
         value = None
         try:
@@ -208,6 +228,7 @@ class ScriptRuntime:
             self.fail(str(exc), unsupported="UnsupportedAPI" in str(exc))
         finally:
             self.active = False
+            self.phase, self.operation = previous_phase, previous_operation
         # Mutations are synchronous; their after-events drain after the current callback.
         if not self.draining:
             self.draining = True
@@ -261,6 +282,12 @@ class ScriptRuntime:
         if not isinstance(args, list) or len(args) > 16:
             raise ValueError("Invalid API arguments")
         w = self.world
+        check(self.phase, self.operation, method, args)
+        if method == "_endRestricted":
+            self.phase = "default"
+            return None
+        if method in {"worldReady", "itemMutation"}:
+            return True
         if method == "unsupported":
             raise Unsupported(": ".join(map(str, args)))
         if method == "register":
@@ -282,8 +309,15 @@ class ScriptRuntime:
             self.registry[kind][identifier] = hooks
         elif method == "random":
             return w.random.random()
-        elif method == "message":
+        elif method in {"message", "console"}:
             w.log("script-message", text=str(args[0])[:2000], recipient=args[1])
+        elif method == "scriptEvent":
+            identifier, message = args
+            if not isinstance(identifier, str) or not isinstance(message, str):
+                raise ValueError("Script event ID and payload must be strings")
+            if ":" not in identifier or identifier.startswith("minecraft:"):
+                raise ValueError("Script event requires a non-minecraft namespace")
+            w.dispatch("scriptEventReceive", {"id": identifier, "message": message, "sourceType": "Server"})
         elif method == "permutation":
             components, states = self.catalog.block(args[0], args[1])
             return {"states": states, "components": components}
