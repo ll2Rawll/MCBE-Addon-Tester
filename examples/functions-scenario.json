@@ -1,0 +1,60 @@
+{
+  "requirements": [
+    {
+      "id": "ticks",
+      "text": "Listed tick functions run in order, count ticks, and mark exactly the third tick."
+    },
+    {
+      "id": "context",
+      "text": "A called function inherits the execution context."
+    }
+  ],
+  "steps": [
+    {
+      "action": {
+        "type": "command",
+        "command": "function init"
+      }
+    },
+    {
+      "action": {
+        "type": "tick",
+        "ticks": 4
+      }
+    },
+    {
+      "assert": {
+        "requirement": "ticks",
+        "path": "/scoreboard/timer/scores/Clock",
+        "operator": "eq",
+        "expected": 4
+      }
+    },
+    {
+      "assert": {
+        "requirement": "ticks",
+        "path": "/player/tags",
+        "operator": "contains",
+        "expected": "third_tick"
+      }
+    },
+    {
+      "action": {
+        "type": "command",
+        "command": "execute positioned 10.0 2.0 10.0 run function move"
+      }
+    },
+    {
+      "assert": {
+        "requirement": "context",
+        "path": "/player/position",
+        "operator": "eq",
+        "expected": [
+          12,
+          2,
+          10
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Original function workshop",
+    "description": "Bounded function and tick-order reference fixture",
+    "uuid": "3968d2ad-0644-4886-95c2-d99557bdc830",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "6b50c1e9-d079-42f2-b686-dcff27dc24af",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

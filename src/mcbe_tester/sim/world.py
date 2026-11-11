@@ -9,6 +9,7 @@ from .diagnostics import Unsupported
 from .entities import EntitySystem
 from .forms import Forms
 from .inventory import Inventory
+from .json_ui import JsonUI
 from .molang import evaluate
 from .physics import block_box as collision_box
 from .physics import select, swept_move
@@ -64,6 +65,7 @@ class World(EntitySystem):
         self.inventory.sync()
         self.scoreboard = Scoreboard()
         self.forms = Forms(self)
+        self.json_ui = JsonUI(self)
         self.time_offset = 0
         self.support = None
         self.block_ticks = {}
@@ -250,7 +252,9 @@ class World(EntitySystem):
             "query.anim_time": entity.get("age", self.tick) / 20,
             "query.health": entity.get("health", self.player["health"]),
             "query.is_alive": entity.get("health", 20) > 0,
-            "query.is_on_ground": entity.get("position", self.player["position"])[1] <= 0,
+            "query.is_on_ground": entity.get(
+                "on_ground", entity.get("position", self.player["position"])[1] <= 0
+            ),
             "query.ground_speed": math.hypot(*[entity.get("velocity", [0, 0, 0])[i] for i in (0, 2)]) * 20,
             "query.modified_move_speed": math.hypot(*[entity.get("velocity", [0, 0, 0])[i] for i in (0, 2)]),
             "query.is_moving": any(entity.get("velocity", [0, 0, 0])),
@@ -292,6 +296,20 @@ class World(EntitySystem):
             if self.tick >= 20000:
                 raise Unsupported("20,000-tick session limit")
             self.tick += 1
+            if self.catalog.tick_functions:
+                from .commands import execute
+
+                command_budget = [0]
+                for function in self.catalog.tick_functions:
+                    try:
+                        execute(self, "function " + function, executor=None, budget=command_budget)
+                    except (ValueError, KeyError, TypeError, ArithmeticError) as exc:
+                        self.catalog.findings.add(
+                            "unsupported" if isinstance(exc, Unsupported) else "error",
+                            "tick-function",
+                            function,
+                            str(exc),
+                        )
             if self.player["menu"] == "game":
                 forward = int("w" in keys) - int("s" in keys)
                 side = int("d" in keys) - int("a" in keys)
@@ -480,6 +498,8 @@ class World(EntitySystem):
             self.advance(action.get("ticks", 1))
         elif op == "key":
             key = action["key"].lower()
+            if self.json_ui.current:
+                return self.json_ui.key(key)
             if self.forms.current and key not in {"escape"}:
                 if key == "enter" and self.forms.current["kind"] == "modal":
                     return self.forms.respond()
@@ -545,9 +565,25 @@ class World(EntitySystem):
                 self.custom_item(stack, "onUse")
                 if self.catalog.items.get(item, {}).get("components", {}).get("minecraft:food"):
                     raise Unsupported("Food consumption/hunger is not modeled")
+        elif op == "ui_open":
+            return self.json_ui.open(
+                action["screen"],
+                action.get("variables"),
+                action.get("bindings"),
+                action.get("width", 640),
+                action.get("height", 400),
+            )
+        elif op == "ui_bind":
+            return self.json_ui.update_bindings(action["bindings"])
+        elif op == "ui_close":
+            self.json_ui.close()
+        elif op == "ui_pointer":
+            return self.json_ui.pointer(action["x"], action["y"], action.get("pressed"))
         elif op == "form_input":
             return self.forms.set_value(action["index"], action["value"])
         elif op == "text":
+            if self.json_ui.current:
+                return self.json_ui.text(action["text"])
             if not self.forms.current:
                 raise ValueError("Text input requires an open form")
             index = self.forms.current["focus"]
@@ -580,6 +616,8 @@ class World(EntitySystem):
         return {"tick": self.tick, "menu": self.player["menu"]}
 
     def ui_regions(self):
+        if self.json_ui.current:
+            return self.json_ui.regions()
         if self.forms.current:
             return self.forms.regions()
         if self.player["menu"] == "pause":
@@ -610,6 +648,8 @@ class World(EntitySystem):
             for region in self.ui_regions():
                 a, b, c, d = region["rect"]
                 if a <= x <= c and b <= y <= d:
+                    if region["id"].startswith("ui:"):
+                        return self.json_ui.click(region)
                     if region["id"].startswith("form:"):
                         return self.forms.click(region, x)
                     if region["id"] in {"resume", "close"}:
@@ -646,6 +686,7 @@ class World(EntitySystem):
             "dynamic_properties": deepcopy(self.dynamic),
             "scoreboard": deepcopy(self.scoreboard.objectives),
             "form": deepcopy(self.forms.current),
+            "json_ui": self.json_ui.snapshot(),
             "ui_regions": self.ui_regions(),
             "events": deepcopy(self.events[-100:]),
         }

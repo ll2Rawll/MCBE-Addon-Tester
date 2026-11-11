@@ -186,7 +186,7 @@ class EmulatorControlsTests(unittest.TestCase):
         )
         self.assertEqual(result["status"], "simulated", result)
         self.assertEqual(s.world.entities["e1"]["position"], [2.5, 0, 4.5])
-        result = s.action({"type": "command", "command": "tp @r 0 0 0"})
+        result = s.action({"type": "command", "command": "tp @initiator 0 0 0"})
         self.assertEqual(result["status"], "blocked")
 
 

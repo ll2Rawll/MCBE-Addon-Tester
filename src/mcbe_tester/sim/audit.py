@@ -49,6 +49,38 @@ STATE_FIELDS = {"animations", "transitions", "on_entry", "on_exit", "blend_trans
 
 
 def audit(catalog):
+    from .commands import ROOTS, parse_execute
+    from .selectors import literal, split_balanced
+
+    for name in catalog.tick_functions:
+        if name not in catalog.functions:
+            catalog.findings.error("tick-function-reference", name, "Function not supplied")
+    for name, lines in catalog.functions.items():
+        for number, command in lines:
+            location = f"{name}:{number}"
+            try:
+                if len(command) > 4096:
+                    raise Unsupported("Function command exceeds 4096 characters")
+                tokens = split_balanced(command.removeprefix("/"))
+                if tokens[0] not in ROOTS:
+                    raise Unsupported("Command not modeled: " + tokens[0])
+                leaf = tokens
+                while leaf and leaf[0] == "execute":
+                    _, leaf = parse_execute(leaf[1:])
+                if (
+                    leaf
+                    and leaf[0] == "function"
+                    and len(leaf) == 2
+                    and literal(leaf[1]) not in catalog.functions
+                ):
+                    catalog.findings.error(
+                        "function-reference", location, "Function not supplied: " + leaf[1]
+                    )
+            except Unsupported as exc:
+                catalog.findings.unsupported("function-command", location, str(exc))
+            except (ValueError, IndexError) as exc:
+                catalog.findings.error("function-syntax", location, str(exc))
+
     def fields(value, allowed, location):
         if not isinstance(value, dict):
             catalog.findings.error("field-type", location, "Expected an object")

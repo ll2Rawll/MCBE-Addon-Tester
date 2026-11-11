@@ -367,11 +367,18 @@ class Renderer:
                 self.catalog.findings.unsupported("entity-render", entity["identifier"], str(exc))
         image = Image.fromarray(self.pixels)
         draw = ImageDraw.Draw(image)
-        draw.rectangle([0, 0, self.width, 31], fill=(13, 20, 30, 255))
-        draw.text(
-            (12, 9), f"BEDROCK ADDON TESTER  /  SIMULATED  /  tick {self.world.tick}", fill=(190, 226, 237)
-        )
-        if self.world.player["menu"] != "game":
+        if not self.world.json_ui.current:
+            draw.rectangle([0, 0, self.width, 31], fill=(13, 20, 30, 255))
+            draw.text(
+                (12, 9),
+                f"BEDROCK ADDON TESTER  /  SIMULATED  /  tick {self.world.tick}",
+                fill=(190, 226, 237),
+            )
+        if self.world.json_ui.current:
+            from .ui_render import draw_ui
+
+            draw_ui(self.world, image)
+        elif self.world.player["menu"] != "game":
             draw.rectangle(
                 [self.width * 0.08, self.height * 0.1, self.width * 0.92, self.height * 0.88],
                 fill=(28, 38, 50),
@@ -449,12 +456,13 @@ class Renderer:
                         [self.width * 0.2, self.height * y, self.width * 0.8, self.height * (y + 0.07)],
                         text(display[key], self.catalog.strings),
                     )
-        draw.rectangle([0, self.height - 12, self.width, self.height], fill=(13, 20, 30))
-        draw.text(
-            (7, self.height - 12),
-            "Independent preview - native graphics compatibility unverified",
-            fill=(180, 195, 207),
-        )
+        if not self.world.json_ui.current:
+            draw.rectangle([0, self.height - 12, self.width, self.height], fill=(13, 20, 30))
+            draw.text(
+                (7, self.height - 12),
+                "Independent preview - native graphics compatibility unverified",
+                fill=(180, 195, 207),
+            )
         buffer = io.BytesIO()
         image.convert("RGB").save(buffer, format="PNG")
         return buffer.getvalue()

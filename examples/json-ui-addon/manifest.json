@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Original JSON UI workshop",
+    "description": "Independent UI test fixture, not a native screen replacement",
+    "uuid": "8d12cc80-254b-4bbb-8e30-ac066738ba21",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      90
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "a73f8236-f250-41d0-90b2-e901b49879ea",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

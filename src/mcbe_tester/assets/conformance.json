@@ -9,7 +9,14 @@
     "animation": "https://learn.microsoft.com/en-us/minecraft/creator/documents/animations/animationsoverview?view=minecraft-bedrock-stable",
     "privileges": "https://learn.microsoft.com/en-us/minecraft/creator/documents/scripting/execution-privilege?view=minecraft-bedrock-stable",
     "system": "https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server/system?view=minecraft-bedrock-stable",
-    "forms": "https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/modalformdata?view=minecraft-bedrock-stable"
+    "forms": "https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/minecraft/server-ui/modalformdata?view=minecraft-bedrock-stable",
+    "functions": "https://learn.microsoft.com/en-us/minecraft/creator/documents/functionsintroduction?view=minecraft-bedrock-stable",
+    "tick-functions": "https://learn.microsoft.com/en-us/minecraft/creator/documents/tickjsonintroduction?view=minecraft-bedrock-stable",
+    "execute": "https://learn.microsoft.com/en-us/minecraft/creator/commands/commands/execute?view=minecraft-bedrock-stable",
+    "selectors": "https://learn.microsoft.com/en-us/minecraft/creator/documents/targetselectors?view=minecraft-bedrock-stable",
+    "scoreboard": "https://learn.microsoft.com/en-us/minecraft/creator/documents/scoreboardoperationstutorial?view=minecraft-bedrock-stable",
+    "ui-screen": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/jsonuireference/examples/jsonuicomponents/ui_screen?view=minecraft-bedrock-stable",
+    "ui-element": "https://learn.microsoft.com/en-us/minecraft/creator/reference/content/jsonuireference/examples/jsonuicomponents/ui_element?view=minecraft-bedrock-stable"
   },
   "cases": [
     {
@@ -652,6 +659,434 @@
               "path": "/dynamic_properties/label",
               "operator": "eq",
               "expected": "Fixture"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "function-context",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "functions",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n",
+        "functions/offset.mcfunction": "# Inherited position and executor\ntp @s ~2 ~ ~\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "function-context"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "execute positioned 8.0 2.0 8.0 run function offset"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/position",
+              "operator": "eq",
+              "expected": [
+                10,
+                2,
+                8
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "tick-function-order",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "tick-functions",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n",
+        "functions/init.mcfunction": "# Run once before advancing the fixture.\nscoreboard objectives add timer dummy\nscoreboard players set Clock timer 0\ntag @s add initialized\n",
+        "functions/tick.json": "{\n  \"values\": [\n    \"tick/add\",\n    \"tick/mark\"\n  ]\n}\n",
+        "functions/move.mcfunction": "# Inherits execution position and executor from its caller.\ntp @s ~2 ~ ~\n",
+        "functions/tick/mark.mcfunction": "execute if entity @a[tag=initialized] if score Clock timer matches 3 run tag @a add third_tick\n",
+        "functions/tick/add.mcfunction": "execute if entity @a[tag=initialized] run scoreboard players add Clock timer 1\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "tick-function-order"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "function init"
+            }
+          },
+          {
+            "action": {
+              "type": "tick",
+              "ticks": 4
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/scoreboard/timer/scores/Clock",
+              "operator": "eq",
+              "expected": 4
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/tags",
+              "operator": "contains",
+              "expected": "third_tick"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "execute-rotated-local",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "execute",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "execute-rotated-local"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "execute positioned 0.0 3.0 0.0 rotated 90 0 run tp @s ^1 ^2 ^3"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/position/0",
+              "operator": "near",
+              "expected": {
+                "value": -3,
+                "tolerance": 1e-06
+              }
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/position/1",
+              "operator": "eq",
+              "expected": 5
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/position/2",
+              "operator": "near",
+              "expected": {
+                "value": 1,
+                "tolerance": 1e-06
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "execute-as-retains-origin",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "execute",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "execute-as-retains-origin"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "execute positioned 12.0 0.0 12.0 as @s run tp @s ~1 ~ ~"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/position",
+              "operator": "eq",
+              "expected": [
+                13,
+                0,
+                12
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "selector-missing-score",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "selectors",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "selector-missing-score"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard objectives add points dummy"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "execute if entity @a[scores={points=!0}] run tag @s add should_not_match"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/tags",
+              "operator": "eq",
+              "expected": []
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players set @s points 2"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "execute if entity @a[scores={points=1..3}] run tag @s add matched"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/player/tags",
+              "operator": "eq",
+              "expected": [
+                "matched"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "scoreboard-operations",
+      "kind": "scenario",
+      "area": "commands",
+      "source": "scoreboard",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original function workshop\",\n    \"description\": \"Bounded function and tick-order reference fixture\",\n    \"uuid\": \"3968d2ad-0644-4886-95c2-d99557bdc830\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"data\",\n      \"uuid\": \"6b50c1e9-d079-42f2-b686-dcff27dc24af\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "scoreboard-operations"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard objectives add points dummy"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players set A points 10"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players set B points 3"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players operation A points /= B points"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/scoreboard/points/scores/A",
+              "operator": "eq",
+              "expected": 3
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players operation A points >< B points"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players set B points 0"
+            }
+          },
+          {
+            "action": {
+              "type": "command",
+              "command": "scoreboard players operation A points /= B points"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/scoreboard/points/scores/A",
+              "operator": "eq",
+              "expected": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-inheritance-layout",
+      "kind": "scenario",
+      "area": "json-ui",
+      "source": "ui-screen",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original JSON UI workshop\",\n    \"description\": \"Independent UI test fixture, not a native screen replacement\",\n    \"uuid\": \"8d12cc80-254b-4bbb-8e30-ac066738ba21\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"resources\",\n      \"uuid\": \"a73f8236-f250-41d0-90b2-e901b49879ea\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n",
+        "ui/_ui_defs.json": "{\"ui_defs\": [\"ui/contract.json\"]}",
+        "ui/contract.json": "{\"namespace\": \"contract\", \"base\": {\"type\": \"button\", \"size\": [\"50% - 10px\", 20], \"$caption|default\": \"Default\", \"controls\": [{\"caption\": {\"type\": \"label\", \"text\": \"$caption\"}}]}, \"screen\": {\"type\": \"screen\", \"controls\": [{\"child@contract.base\": {\"$caption\": \"Override\", \"anchor_from\": \"top_left\", \"anchor_to\": \"top_left\", \"offset\": [10, 30]}}]}}"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "ui-inheritance-layout"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "ui_open",
+              "screen": "contract.screen",
+              "width": 400,
+              "height": 300
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/json_ui/nodes/1/rect",
+              "operator": "eq",
+              "expected": [
+                10,
+                30,
+                200,
+                50
+              ]
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/json_ui/nodes/2/text",
+              "operator": "eq",
+              "expected": "Override"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-view-binding-toggle",
+      "kind": "scenario",
+      "area": "json-ui",
+      "source": "ui-element",
+      "files": {
+        "manifest.json": "{\n  \"format_version\": 2,\n  \"header\": {\n    \"name\": \"Original JSON UI workshop\",\n    \"description\": \"Independent UI test fixture, not a native screen replacement\",\n    \"uuid\": \"8d12cc80-254b-4bbb-8e30-ac066738ba21\",\n    \"version\": [\n      1,\n      0,\n      0\n    ],\n    \"min_engine_version\": [\n      1,\n      21,\n      90\n    ]\n  },\n  \"modules\": [\n    {\n      \"type\": \"resources\",\n      \"uuid\": \"a73f8236-f250-41d0-90b2-e901b49879ea\",\n      \"version\": [\n        1,\n        0,\n        0\n      ]\n    }\n  ]\n}\n",
+        "ui/_ui_defs.json": "{\"ui_defs\": [\"ui/contract.json\"]}",
+        "ui/contract.json": "{\"namespace\": \"contract\", \"screen\": {\"type\": \"screen\", \"controls\": [{\"switch\": {\"type\": \"toggle\", \"button_mappings\": [{\"from_button_id\": \"button.menu_select\", \"to_button_id\": \"button.contract\", \"mapping_type\": \"pressed\"}], \"controls\": [{\"on\": {\"type\": \"label\", \"text\": \"On\", \"bindings\": [{\"binding_type\": \"view\", \"source_control_name\": \"switch\", \"source_property_name\": \"#toggle_state\", \"target_property_name\": \"#visible\"}]}}]}}]}}"
+      },
+      "scenario": {
+        "requirements": [
+          {
+            "id": "contract",
+            "text": "ui-view-binding-toggle"
+          }
+        ],
+        "steps": [
+          {
+            "action": {
+              "type": "ui_open",
+              "screen": "contract.screen"
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/json_ui/nodes/2/visible",
+              "operator": "eq",
+              "expected": false
+            }
+          },
+          {
+            "action": {
+              "type": "click",
+              "x": 0.5,
+              "y": 0.5
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/json_ui/nodes/2/visible",
+              "operator": "eq",
+              "expected": true
+            }
+          },
+          {
+            "assert": {
+              "requirement": "contract",
+              "path": "/json_ui/events/0/button",
+              "operator": "eq",
+              "expected": "button.contract"
             }
           }
         ]

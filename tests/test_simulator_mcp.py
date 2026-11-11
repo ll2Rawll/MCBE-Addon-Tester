@@ -24,7 +24,7 @@ class SimulatorMCPTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("run_conformance_suite", names)
             contracts = await client.call_tool("run_conformance_suite", {})
             self.assertFalse(contracts.isError)
-            self.assertGreaterEqual(payload(contracts)["total"], 50)
+            self.assertGreaterEqual(payload(contracts)["total"], 58)
             self.assertEqual(payload(contracts)["mismatch"], 0)
             self.assertEqual(payload(contracts)["error"], 0)
             self.assertIsNone(payload(contracts)["accuracy_percent"])
@@ -86,6 +86,36 @@ class SimulatorMCPTests(unittest.IsolatedAsyncioTestCase):
                 },
             )
             self.assertEqual(payload(response)["state"]["scoreboard"]["workshop"]["scores"]["e1"], 8)
+            await client.call_tool("close_session", {"session_id": key})
+
+            # Resource-pack UI runs through the same real protocol and returns pixels.
+            ui_source = source.parent / "json-ui-addon"
+            loaded = await client.call_tool("load_addon", {"path": str(ui_source)})
+            key = payload(loaded)["session_id"]
+            self.assertIn("workshop.screen", payload(loaded)["catalog"]["ui_definitions"])
+            operated = await client.call_tool(
+                "simulate_actions",
+                {
+                    "session_id": key,
+                    "actions": [
+                        {
+                            "type": "ui_open",
+                            "screen": "workshop.screen",
+                            "bindings": {"#heading": "MCP UI", "#show_notice": True, "#status": "Ready"},
+                        },
+                        {"type": "click", "x": 0.5, "y": 0.3},
+                        {"type": "text", "text": "MCP robot"},
+                        {"type": "click", "x": 0.5, "y": 0.5},
+                    ],
+                },
+            )
+            self.assertFalse(operated.isError)
+            state = payload(operated)["state"]["json_ui"]
+            self.assertEqual(state["state"]["workshop.screen/card/stack/name"]["text"], "MCP robot")
+            self.assertEqual(state["events"][0]["button"], "button.workshop_apply")
+            rendered_ui = await client.call_tool("render_view", {"session_id": key})
+            self.assertFalse(rendered_ui.isError)
+            self.assertTrue(any(item.type == "image" for item in rendered_ui.content))
             await client.call_tool("close_session", {"session_id": key})
 
     async def test_inline_pack_needs_no_local_addon_path(self):

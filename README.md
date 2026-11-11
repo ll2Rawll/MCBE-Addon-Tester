@@ -4,9 +4,9 @@
 
 The assistant you already use supplies the reasoning. This program loads your add-on, simulates supported behavior, renders pack assets, accepts virtual controls, and returns evidence through MCP or a command line.
 
-**Version 0.4 improves the emulator's execution rules, rendering and animation, but is not a complete Bedrock implementation.** It does not establish 95% or 100% compatibility with Minecraft. It cannot fully test arbitrary add-ons, native graphics, or native menus yet. Unsupported features appear in reports; `simulation_passed` applies only to assertions in the implemented model. Native compatibility remains `unverified`.
+**Version 0.5 adds function packs, richer command execution and a JSON UI interpreter.** It is still a partial Bedrock emulator, with no established 95–100% native accuracy. Unsupported features appear in reports; `simulation_passed` applies to assertions in the implemented model. Native compatibility remains `unverified`.
 
-This release corrects early/before-event script access, manifest import checks, Molang control flow, animation clocks and stop/hold behavior, and geometry crossing the camera's near plane. Entity render controllers now choose geometry, textures, materials, visibility and tint. The scanner checks nested fields and unexecuted animation branches. A new [conformance tool](docs/CONFORMANCE.md) checks 50 explicit documented contracts: **47 match; 3 remain unsupported**. These selected, project-authored cases do not measure native Minecraft accuracy.
+The tool now runs `.mcfunction` and `tick.json`, preserves execution position/rotation through command chains, and handles additional selectors and scoreboard operations. It can load supplied JSON UI templates, resolve variables and explicit bindings, render their controls, and exercise text entry, toggles, keyboard focus and pointer states. The [conformance tool](docs/CONFORMANCE.md) checks **58 selected documented contracts: 55 match; 3 remain unsupported**. These project-authored cases do not measure native Minecraft accuracy.
 
 ![Independent simulator rendering of the included workshop fixture](docs/simulator-preview.png)
 
@@ -19,14 +19,17 @@ This release corrects early/before-event script access, manifest import checks, 
 | Entities | Spawn, health/damage events, tags, filtered queries, effects subset, component groups and filtered events, properties, seeded choices, gravity | No general mob AI, armor/invulnerability simulation, or full native combat |
 | Items and recipes | 36-slot player inventory, stacking, metadata, names/lore, durability data, entity containers, transfers, shaped/shapeless crafting and overflow rollback | No equipment/enchantments, automatic durability wear, hunger or food consumption |
 | Scripts | Isolated QuickJS; bundled ES modules, classes, async/await, generator jobs, `waitTicks`; selected APIs/hooks; v2 early/restricted/default phases; declared-import checks | API subset; exact native timing and all method/version privileges unverified; dynamic compilation/external imports unsupported |
-| Commands and scores | Bounded command interpreter, selected selectors, objectives, named/entity participants and integer scores | Only documented command subset; no operating-system command execution |
+| Commands and scores | `.mcfunction`, ordered tick functions, execute contexts/conditions, relative/local coordinates, filtered selectors, scoreboard arithmetic and swap | Bounded command subset; native startup ordering, success counts and integer-coordinate centering unverified |
 | Graphics | Textured cuboids, bones/UVs, near-plane clipping; render-controller resource arrays, materials, visibility/tint; per-instance animation clocks, linear keyframes, rotation/position cross-fades | Independent software preview; no RenderDragon, PBR, native lighting, GPU parity, Catmull–Rom, or scale cross-fades |
-| Controls and menus | Virtual WASD, jump, look, clicks, hotbar icons, inventory/pause, async action/message/modal forms, pagination, editable fields and cancellation | Original simulator layout; custom JSON UI, controller/touch behavior and Bedrock's actual screens remain unsupported |
+| Controls and menus | Virtual WASD, jump, look, clicks, hotbar icons, inventory/pause, async action/message/modal forms, pagination, editable fields and cancellation | Original simulator layout; controller/touch behavior and Bedrock's actual screens remain unsupported |
+| JSON UI | Supplied templates, scoped variables, global/view bindings, percentage/anchor/stack layout, clipped textures, buttons, toggles, edit boxes, focus and hover/press input | Explicit fixture bindings; native templates/handlers/fonts, factories, collections, animation and pack modifications remain gaps |
 | Evidence | State assertions, PNGs, animation sequences, reference-image comparisons, HTML/JSON reports, frozen input and replay traces | Simulation evidence is not native gameplay evidence |
 
 See [the exact boundaries](docs/LIMITATIONS.md), [research and design](docs/RESEARCH.md), and [the AI workflow](docs/AI-WORKFLOW.md).
 
 ![Interactive emulator form generated from an add-on script](docs/emulator-form.png)
+
+![Independent JSON UI preview from the supplied resource-pack fixture](docs/json-ui-preview.png)
 
 ## Use it with your assistant
 
@@ -79,13 +82,15 @@ The workshop fixture includes original textures, a toggleable block, a scripted 
 ```sh
 bedrock-addon-tester test examples/simulator-addon --scenario examples/simulator-scenario.json --out .mcbe-sim/demo
 bedrock-addon-tester test examples/simulator-addon --scenario examples/emulator-scenario.json --out .mcbe-sim/forms
+bedrock-addon-tester test examples/json-ui-addon --scenario examples/json-ui-scenario.json --out .mcbe-sim/ui
+bedrock-addon-tester test examples/functions-addon --scenario examples/functions-scenario.json --out .mcbe-sim/functions
 bedrock-addon-tester render examples/simulator-addon --out .mcbe-sim/preview.png
 bedrock-addon-tester inspect path/to/your-addon.mcaddon
 bedrock-addon-tester explore path/to/your-addon.mcaddon
 bedrock-addon-tester conformance --out .mcbe-sim/contracts.json
 ```
 
-The original demonstration checks ten expectations around blocks, menus, recipes, timers, entities and collision. The new emulator scenario checks eleven expectations around asynchronous forms, field values, cancellation, named items, a robot and its scoreboard. Those expectations exercise our model; they are not an independent accuracy benchmark against Bedrock.
+The original demonstration checks ten expectations around blocks, menus, recipes, timers, entities and collision. The forms scenario checks eleven expectations around asynchronous forms, field values, cancellation, named items, a robot and its scoreboard. The JSON UI scenario adds eight assertions and three frames; the function scenario checks three expectations around tick ordering and inherited context. These exercise the model; they are not an independent accuracy benchmark against Bedrock. See the [JSON UI guide](docs/JSON-UI.md) and [command guide](docs/COMMANDS.md).
 
 `conformance` exits **2** while its documented gaps remain. Its JSON records every case and source, including unsupported cases in the total. `--allow-unsupported` lets CI accept declared gaps while still failing on mismatches/errors; the report stays `incomplete`. An optional `--suite` accepts separate, explicit reference expectations.
 
@@ -117,7 +122,7 @@ A scenario contains author-specified requirements and steps:
 }
 ```
 
-Actions do not create passing assertions. Untested requirements remain untested. Images are labeled as simulated. A missing asset produces a checkerboard and an unresolved finding. Unknown behavior blocks a complete simulation result when detected. This prototype's feature detector is also incomplete; it cannot guarantee discovery of every unsupported subfeature.
+Actions do not create passing assertions. Untested requirements remain untested. Image metadata and evidence reports identify simulated output. JSON UI screenshots use the full logical viewport so an overlay cannot obscure clickable controls. A missing asset produces a checkerboard and an unresolved finding. Unknown behavior blocks a complete simulation result when detected. This prototype's feature detector is also incomplete; it cannot guarantee discovery of every unsupported subfeature.
 
 ## Development
 

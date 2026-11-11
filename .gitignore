@@ -16,3 +16,6 @@ simulator-evidence/
 emulator-evidence/
 replay-evidence/
 conformance-evidence.json
+json-ui-evidence/
+json-ui-replay/
+functions-evidence/

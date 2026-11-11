@@ -30,11 +30,17 @@ Forms opened by an add-on appear in `/form` and `/ui_regions`. The same rectangl
 
 For precise scenario inputs use `{"type":"form_input","index":0,"value":true}`. Indexes count input controls only, excluding headers/labels. Submit current values with `{"type":"form_response"}`, submit a full modal array with `values`, choose an action/message button with `selection`, or cancel with `canceled:true`. These operations resume the script's promise and callbacks. Inspect state and assert their effects; merely showing a form is not a passing behavior test.
 
-`{"type":"command","command":"scoreboard objectives add points dummy"}` runs the independent command interpreter. Supported families are `say`, `setblock` (replace/keep), bounded `fill`, `give`, `summon`, `tp`, `kill`, `tag`, `event entity`, `gamemode`, selected `scoreboard` operations, and `execute as … run …`. Unimplemented syntax blocks the result. `chat` dispatches modeled chat events; `damage` applies explicitly specified damage to an entity. These never send keyboard input or commands to the host operating system.
+`{"type":"command","command":"scoreboard objectives add points dummy"}` runs the independent command interpreter. Supported families are `say`, `setblock` (replace/keep), bounded `fill`, `give`, `summon`, `tp`, `kill`, `tag`, `event entity`, `gamemode`, `function`, `testfor`, `testforblock`, scoreboard operations, and execute context/condition chains. Functions and tick lists are included in the loaded catalog. See [COMMANDS.md](COMMANDS.md) for supported forms and bounds. Unimplemented syntax blocks the result. `chat` dispatches modeled chat events; `damage` applies explicitly specified damage to an entity. These never send keyboard input or commands to the host operating system.
+
+## Supplied JSON UI
+
+Read `catalog.ui_definitions`, then open a named fixture with `ui_open`. For example: `{"type":"ui_open","screen":"workshop.screen","bindings":{"#heading":"Settings","#show_notice":true,"#status":"Ready"}}`. Inspect `/json_ui/nodes` and `/ui_regions`, request `render_view`, and click normalized regions. `text` edits the focused edit box; `key` supports Tab, declared directional focus links, Enter/Space and Escape. `ui_pointer` supplies normalized x/y and an optional boolean `pressed`; `ui_bind` updates explicit #binding values. Inspect `/json_ui/state` and `/json_ui/events` and assert their intended changes.
+
+Opening a fixture or supplying its bindings is setup, not proof of native menu integration. An emitted button ID is evidence of a mapping, not evidence that a native handler ran. Missing templates, native bindings and unsupported fields remain blockers. See [JSON-UI.md](JSON-UI.md) and the original UI example for a complete replayable scenario.
 
 ## Interpreting results
 
-`run_conformance_suite` (CLI `conformance`) checks the emulator against 50 selected published-contract cases, or a supplied suite. Use it to diagnose model regressions. It is not a substitute for an add-on's own specification or a native compatibility benchmark. Its three known gaps remain in the total; a 47/50 result must never be presented as Minecraft accuracy. See [the reference format and provenance rules](CONFORMANCE.md).
+`run_conformance_suite` (CLI `conformance`) checks the emulator against 58 selected published-contract cases, or a supplied suite. Use it to diagnose model regressions. It is not a substitute for an add-on's own specification or a native compatibility benchmark. Its three known gaps remain in the total; a 55/58 result must never be presented as Minecraft accuracy. See [the reference format and provenance rules](CONFORMANCE.md).
 
 The add-on report's `coverage` counts detected modeled/unsupported content-field occurrences. It does not count all possible behavior. `detection_complete:false` and zero native reference cases remain explicit. Fix unsupported findings or report them unresolved; do not delete them to improve a score.
 

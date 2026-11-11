@@ -34,11 +34,17 @@ jobs:
         run: mcbe-test test examples/simulator-addon --scenario examples/emulator-scenario.json --out emulator-evidence
       - name: Replay emulator evidence
         run: mcbe-test test emulator-evidence/input.zip --scenario emulator-evidence/replay.json --out replay-evidence
+      - name: Exercise supplied JSON UI and virtual input
+        run: mcbe-test test examples/json-ui-addon --scenario examples/json-ui-scenario.json --out json-ui-evidence
+      - name: Replay JSON UI evidence
+        run: mcbe-test test json-ui-evidence/input.zip --scenario json-ui-evidence/replay.json --out json-ui-replay
+      - name: Exercise functions, tick order and command contexts
+        run: mcbe-test test examples/functions-addon --scenario examples/functions-scenario.json --out functions-evidence
       - name: Build wheel and verify observer is packaged
         shell: bash
         run: |
           python -m pip wheel . --no-deps -w dist
-          python -c "import glob,zipfile; z=zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert all('mcbe_tester/'+p in z.namelist() for p in ['assets/observer.js','assets/bedrock_api.js','assets/bundle.cjs','assets/conformance.json','sim/mcp.py','sim/js_worker.py','sim/conformance.py'])"
+          python -c "import glob,zipfile; z=zipfile.ZipFile(glob.glob('dist/*.whl')[0]); assert all('mcbe_tester/'+p in z.namelist() for p in ['assets/observer.js','assets/bedrock_api.js','assets/bundle.cjs','assets/conformance.json','sim/mcp.py','sim/js_worker.py','sim/conformance.py','sim/json_ui.py','sim/ui_expression.py','sim/ui_render.py','sim/selectors.py'])"
       - uses: actions/upload-artifact@v4
         with:
           name: simulator-evidence-${{ matrix.os }}
@@ -46,4 +52,7 @@ jobs:
             simulator-evidence/
             emulator-evidence/
             replay-evidence/
+            json-ui-evidence/
+            json-ui-replay/
+            functions-evidence/
             conformance-evidence.json

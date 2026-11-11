@@ -54,6 +54,8 @@ class Catalog:
         self.blocks, self.items, self.entities, self.clients, self.recipes = {}, {}, {}, {}, {}
         self.geometries, self.animations, self.controllers = {}, {}, {}
         self.render_controllers = {}
+        self.functions, self.tick_functions = {}, []
+        self.ui_globals, self.ui_defs, self.ui_documents = [], [], {}
         self.terrain, self.icons, self.strings = {}, {}, {}
         self.scripts = []
         self.origins = {}
@@ -65,6 +67,13 @@ class Catalog:
         self.hash = digest.hexdigest()
         self._index()
         from .audit import audit
+        from .json_ui import Definitions
+
+        self.ui = Definitions(self)
+        try:
+            self.ui.load()
+        except (ValueError, TypeError, KeyError, AttributeError, RecursionError) as exc:
+            self.findings.error("ui-definition", "pack", str(exc))
 
         try:
             audit(self)
@@ -115,6 +124,26 @@ class Catalog:
                 if not name.startswith(prefix):
                     continue
                 local = name[len(prefix) :]
+                if (
+                    pack["kind"] == "behavior"
+                    and local.startswith("functions/")
+                    and local.endswith(".mcfunction")
+                ):
+                    identifier = local[len("functions/") : -len(".mcfunction")]
+                    try:
+                        if len(raw) > 256 * 1024 or len(self.functions) >= 512:
+                            raise ValueError("Function source/count budget exceeded")
+                        if identifier in self.functions:
+                            raise ValueError("Duplicate function across supplied packs")
+                        self.functions[identifier] = [
+                            (i, line.strip())
+                            for i, line in enumerate(raw.decode("utf-8-sig").splitlines(), 1)
+                            if line.strip() and not line.lstrip().startswith("#")
+                        ]
+                        self.feature("mcfunction", name)
+                    except (ValueError, UnicodeError) as exc:
+                        self.findings.error("function-file", name, str(exc))
+                    continue
                 if local == "texts/en_US.lang":
                     self.strings.update(
                         line.split("=", 1)
@@ -127,6 +156,37 @@ class Catalog:
                     data = jsonc(raw)
                     if not isinstance(data, dict):
                         raise ValueError("Expected a JSON object")
+                    if pack["kind"] == "behavior" and local == "functions/tick.json":
+                        values = data.get("values")
+                        if (
+                            set(data) != {"values"}
+                            or not isinstance(values, list)
+                            or len(values) > 128
+                            or any(not isinstance(value, str) for value in values)
+                        ):
+                            raise ValueError("tick.json requires up to 128 function names in values")
+                        self.tick_functions.extend(values)
+                        self.feature("tick-functions", name)
+                        continue
+                    if pack["kind"] == "resource" and local.startswith("ui/"):
+                        if local == "ui/_ui_defs.json":
+                            values = data.get("ui_defs")
+                            if set(data) != {"ui_defs"} or not isinstance(values, list) or len(values) > 128:
+                                raise ValueError("_ui_defs.json needs up to 128 paths in ui_defs")
+                            for value in values:
+                                if (
+                                    not isinstance(value, str)
+                                    or not value.startswith("ui/")
+                                    or ".." in value.split("/")
+                                ):
+                                    raise ValueError("UI definitions must be paths within ui/")
+                                self.ui_defs.append(prefix + value)
+                        elif local == "ui/_global_variables.json":
+                            self.ui_globals.append(data)
+                        else:
+                            self.ui_documents[name] = data
+                        self.feature("json-ui", name)
+                        continue
                     if local in ("textures/terrain_texture.json", "textures/item_texture.json"):
                         target = self.terrain if "terrain" in local else self.icons
                         for key, entry in data.get("texture_data", {}).items():
@@ -227,7 +287,7 @@ class Catalog:
         self.findings.approximate(
             "menus",
             "profile",
-            "Simulator inventory/pause/forms layout; native Bedrock UI and custom JSON UI are not reproduced",
+            "Independent inventory/pause/forms and selected JSON UI layout; native screens, fonts, bindings and input timing remain unverified",
         )
         if self.scripts:
             self.findings.approximate(
@@ -291,7 +351,7 @@ class Catalog:
         cache_key = (name, kind, prefix)
         if cache_key in self._textures:
             return self._textures[cache_key].copy()
-        tables = self.terrain if kind == "block" else self.icons
+        tables = self.terrain if kind == "block" else self.icons if kind == "item" else {}
         if name in tables:
             prefix, path = tables[name]
             if isinstance(path, list):
@@ -314,10 +374,13 @@ class Catalog:
         for candidate in paths:
             if candidate not in self.files:
                 continue
-            with Image.open(io.BytesIO(self.files[candidate])) as img:
-                if img.width > 2048 or img.height > 2048:
-                    raise Unsupported("Texture exceeds 2048x2048 simulator limit")
-                image = img.convert("RGBA")
+            try:
+                with Image.open(io.BytesIO(self.files[candidate])) as img:
+                    if img.width > 2048 or img.height > 2048:
+                        raise Unsupported("Texture exceeds 2048x2048 simulator limit")
+                    image = img.convert("RGBA")
+            except (OSError, Image.DecompressionBombError) as exc:
+                raise Unsupported("Supplied texture cannot be decoded: " + candidate) from exc
             self._textures[cache_key] = image
             return image.copy()
         self.findings.unsupported(
@@ -351,6 +414,9 @@ class Catalog:
             "blocks": sorted(self.blocks),
             "items": sorted(self.items),
             "entities": sorted(self.entities),
+            "functions": sorted(self.functions),
+            "tick_functions": list(self.tick_functions),
+            "ui_definitions": sorted(self.ui.controls),
             "recipes": sorted(self.recipes),
             "geometries": sorted(self.geometries),
             "animations": sorted(self.animations),

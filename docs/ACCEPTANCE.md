@@ -20,8 +20,12 @@ Acceptance checks implemented in this repository:
 - Animation activation/re-entry clocks, stop/hold/loop behavior, keyframe discontinuities, entry/exit expressions, finished transitions and cross-fade weights have explicit expectations.
 - Render-controller array selection changes pixels; ordered visibility and missing/unsupported shaders are checked. Near-plane intersection retains visible triangle fragments.
 - An unexecuted state or unspawned entity still reports known unsupported nested fields and queries.
-- The packaged 50-case documented-contract suite must have zero unexpected mismatches/errors and retain the declared gaps. Every case remains in its denominator; it never reports native accuracy. CLI exit codes and non-overwriting evidence output are tested.
+- The packaged 58-case documented-contract suite must have zero unexpected mismatches/errors and retain the declared gaps. Every case remains in its denominator; it never reports native accuracy. CLI exit codes and non-overwriting evidence output are tested.
+
+- Function/tick execution preserves command context and ordering; selector origin, missing-score negation, local coordinates and score arithmetic have explicit tests.
+- Supplied UI templates, defaults, anchors, stack positioning, clipped/overlapping hit regions and forward bindings are tested. Invalid input rolls back UI state; corrupted textures produce findings. Text/toggle/button interactions and UI PNGs also run through real stdio MCP.
+- The function and JSON UI scenarios run in Windows/Linux CI, including UI evidence replay and packaged interpreter checks.
 
 Run `python -m unittest discover -v`, then the workshop scenario in the README. Windows and Linux CI execute the same checks. Passing these checks is a software release gate, **not** a native Bedrock acceptance gate.
 
-Next fidelity milestones require independent reference fixtures for each target build: full block component schemas, complete Script API semantics, native movement observations, full resource/render controllers, custom JSON UI, native form layout/behavior, particles, vanilla assets under appropriate licensing, and platform graphics differences. Each subsystem should have declared coverage and an independent held-out regression corpus. Do not turn an untested implementation milestone into an accuracy score.
+Next fidelity milestones require independent reference fixtures for each target build: full block component schemas, complete Script API semantics, native movement observations, full resource/render controllers, the remaining JSON UI/native-binding surface, native form layout/behavior, particles, vanilla assets under appropriate licensing, and platform graphics differences. Each subsystem should have declared coverage and an independent held-out regression corpus. Do not turn an untested implementation milestone into an accuracy score.

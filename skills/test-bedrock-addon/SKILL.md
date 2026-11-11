@@ -27,6 +27,11 @@ in the plugin directory once to install the module compiler. A plain GitHub conn
    For scripted forms inspect `/form` and `/ui_regions`; use clicks, `form_input`,
    `text`, or `form_response`. Check both submission and cancellation and assert
    the asynchronous callback's effects. Menus can span multiple pages.
+   For supplied JSON UI, inspect `catalog.ui_definitions`; use `ui_open` with explicit
+   fixture bindings, then inspect `/json_ui/nodes` and `/ui_regions`. Exercise clicks,
+   text, focus and `ui_pointer` states; use `ui_bind` to vary external values. Assert
+   `/json_ui/state` and mapped `/json_ui/events`. Never treat fixture bindings or an
+   emitted button ID as proof that a native game screen/handler works.
 6. Read the report and export replay evidence if requested. Report failures,
    unsupported features and untested requirements alongside simulated passes.
 7. Native compatibility remains unverified and accuracy unmeasured. Never translate

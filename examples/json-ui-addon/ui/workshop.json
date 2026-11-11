@@ -1,0 +1,303 @@
+{
+  "namespace": "workshop",
+  "button": {
+    "type": "button",
+    "size": [
+      "100%",
+      40
+    ],
+    "$caption|default": "Apply",
+    "default_control": "normal",
+    "hover_control": "hover",
+    "pressed_control": "pressed",
+    "controls": [
+      {
+        "normal": {
+          "type": "image",
+          "texture": "textures/ui/white",
+          "size": [
+            "100%",
+            "100%"
+          ],
+          "color": "$accent_color"
+        }
+      },
+      {
+        "hover": {
+          "type": "image",
+          "texture": "textures/ui/white",
+          "size": [
+            "100%",
+            "100%"
+          ],
+          "color": [
+            0.3,
+            0.95,
+            0.85
+          ]
+        }
+      },
+      {
+        "pressed": {
+          "type": "image",
+          "texture": "textures/ui/white",
+          "size": [
+            "100%",
+            "100%"
+          ],
+          "color": [
+            0.1,
+            0.5,
+            0.45
+          ]
+        }
+      },
+      {
+        "caption": {
+          "type": "label",
+          "text": "$caption",
+          "color": [
+            0.04,
+            0.12,
+            0.14
+          ]
+        }
+      }
+    ],
+    "button_mappings": [
+      {
+        "from_button_id": "button.menu_select",
+        "to_button_id": "button.workshop_apply",
+        "mapping_type": "pressed"
+      }
+    ]
+  },
+  "screen": {
+    "type": "screen",
+    "controls": [
+      {
+        "background": {
+          "type": "image",
+          "texture": "textures/ui/white",
+          "size": [
+            "100%",
+            "100%"
+          ],
+          "color": [
+            0.035,
+            0.065,
+            0.105
+          ]
+        }
+      },
+      {
+        "heading": {
+          "type": "label",
+          "size": [
+            "100%",
+            30
+          ],
+          "anchor_from": "top_middle",
+          "anchor_to": "top_middle",
+          "offset": [
+            0,
+            34
+          ],
+          "font_scale_factor": 1.5,
+          "bindings": [
+            {
+              "binding_name": "#heading",
+              "binding_name_override": "#text"
+            }
+          ]
+        }
+      },
+      {
+        "card": {
+          "type": "image",
+          "texture": "textures/ui/white",
+          "size": [
+            "80%",
+            250
+          ],
+          "offset": [
+            0,
+            12
+          ],
+          "color": [
+            0.08,
+            0.12,
+            0.17
+          ],
+          "clips_children": true,
+          "controls": [
+            {
+              "stack": {
+                "type": "stack_panel",
+                "size": [
+                  "100% - 32px",
+                  "100% - 24px"
+                ],
+                "controls": [
+                  {
+                    "name": {
+                      "type": "edit_box",
+                      "size": [
+                        "100%",
+                        44
+                      ],
+                      "text_box_name": "workshop_name",
+                      "text_control": "value",
+                      "place_holder_control": "placeholder",
+                      "max_length": 24,
+                      "focus_change_down": "enabled",
+                      "controls": [
+                        {
+                          "background": {
+                            "type": "image",
+                            "texture": "textures/ui/white",
+                            "size": [
+                              "100% - 4px",
+                              36
+                            ],
+                            "color": [
+                              0.08,
+                              0.15,
+                              0.2
+                            ]
+                          }
+                        },
+                        {
+                          "value": {
+                            "type": "label",
+                            "text": "#text_box_text"
+                          }
+                        },
+                        {
+                          "placeholder": {
+                            "type": "label",
+                            "text": "Click here and type a name",
+                            "color": [
+                              0.55,
+                              0.65,
+                              0.72
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "enabled": {
+                      "type": "toggle",
+                      "size": [
+                        "100%",
+                        36
+                      ],
+                      "focus_change_down": "apply",
+                      "toggle_default_state": false,
+                      "controls": [
+                        {
+                          "off": {
+                            "type": "label",
+                            "text": "[ ] Enable preview",
+                            "bindings": [
+                              {
+                                "binding_type": "view",
+                                "source_control_name": "enabled",
+                                "source_property_name": "(not #toggle_state)",
+                                "target_property_name": "#visible"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "on": {
+                            "type": "label",
+                            "text": "[x] Enable preview",
+                            "color": "$accent_color",
+                            "bindings": [
+                              {
+                                "binding_type": "view",
+                                "source_control_name": "enabled",
+                                "source_property_name": "#toggle_state",
+                                "target_property_name": "#visible"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "apply@workshop.button": {
+                      "$caption": "Apply settings"
+                    }
+                  },
+                  {
+                    "notice": {
+                      "type": "label",
+                      "size": [
+                        "100%",
+                        40
+                      ],
+                      "text": "Independent preview: native compatibility unverified",
+                      "color": [
+                        0.98,
+                        0.76,
+                        0.35
+                      ],
+                      "bindings": [
+                        {
+                          "binding_name": "#show_notice",
+                          "binding_name_override": "#visible"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "status": {
+                      "type": "label",
+                      "size": [
+                        "100%",
+                        40
+                      ],
+                      "color": [
+                        0.65,
+                        0.75,
+                        0.82
+                      ],
+                      "bindings": [
+                        {
+                          "binding_name": "#status",
+                          "binding_name_override": "#text"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "footer": {
+          "type": "label",
+          "size": [
+            "100%",
+            28
+          ],
+          "anchor_from": "bottom_middle",
+          "anchor_to": "bottom_middle",
+          "text": "BEDROCK ADDON TESTER / SIMULATED",
+          "color": [
+            0.5,
+            0.62,
+            0.72
+          ]
+        }
+      }
+    ]
+  }
+}

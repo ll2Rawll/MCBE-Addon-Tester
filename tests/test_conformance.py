@@ -12,7 +12,7 @@ from mcbe_tester.sim.conformance import BUILTIN, run_suite
 class ConformanceTests(unittest.TestCase):
     def test_documented_cases_have_no_unexpected_mismatches(self):
         result = run_suite()
-        self.assertGreaterEqual(result["total"], 50)
+        self.assertGreaterEqual(result["total"], 58)
         self.assertEqual(result["mismatch"], 0, result)
         self.assertEqual(result["error"], 0, result)
         self.assertEqual(

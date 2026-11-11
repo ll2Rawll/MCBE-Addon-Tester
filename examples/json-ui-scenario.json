@@ -1,0 +1,30 @@
+{
+  "requirements": [
+    {"id": "layout", "text": "The supplied screen lays out an editor, toggle and button at the documented fixture positions."},
+    {"id": "input", "text": "Typing updates the child label; toggling changes its state; the apply button emits its mapped identifier."},
+    {"id": "bindings", "text": "Changing an explicit global binding hides the notice without inventing native game state."},
+    {"id": "close", "text": "Escape closes the fixture and restores the simulation view."}
+  ],
+  "steps": [
+    {"action": {"type": "ui_open", "screen": "workshop.screen", "bindings": {"#heading": "JSON UI workshop", "#show_notice": true, "#status": "Ready"}}},
+    {"assert": {"requirement": "layout", "path": "/json_ui/nodes/0/rect", "operator": "eq", "expected": [0, 0, 640, 400]}},
+    {"assert": {"requirement": "layout", "path": "/ui_regions/0/rect", "operator": "eq", "expected": [0.125, 0.4475, 0.875, 0.5475]}},
+    {"render": {}},
+    {"action": {"type": "click", "x": 0.5, "y": 0.3}},
+    {"action": {"type": "text", "text": "Copper"}},
+    {"assert": {"requirement": "input", "path": "/json_ui/state/workshop.screen~1card~1stack~1name/text", "operator": "eq", "expected": "Copper"}},
+    {"action": {"type": "key", "key": "down"}},
+    {"action": {"type": "key", "key": "space"}},
+    {"assert": {"requirement": "input", "path": "/json_ui/state/workshop.screen~1card~1stack~1enabled/toggle_state", "operator": "eq", "expected": true}},
+    {"action": {"type": "ui_pointer", "x": 0.5, "y": 0.5}},
+    {"render": {}},
+    {"action": {"type": "click", "x": 0.5, "y": 0.5}},
+    {"assert": {"requirement": "input", "path": "/json_ui/events/0/button", "operator": "eq", "expected": "button.workshop_apply"}},
+    {"action": {"type": "ui_bind", "bindings": {"#show_notice": false, "#status": "Mapped event observed"}}},
+    {"assert": {"requirement": "bindings", "path": "/json_ui/bindings/#show_notice", "operator": "eq", "expected": false}},
+    {"render": {}},
+    {"action": {"type": "key", "key": "escape"}},
+    {"assert": {"requirement": "close", "path": "/player/menu", "operator": "eq", "expected": "game"}},
+    {"assert": {"requirement": "close", "path": "/json_ui", "operator": "eq", "expected": null}}
+  ]
+}
