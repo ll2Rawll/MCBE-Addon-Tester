@@ -395,6 +395,17 @@ class JsonUITests(unittest.TestCase):
         self.assertEqual(s.action({"type": "text", "text": "Shared value"})["status"], "simulated")
         self.assertEqual(ui._by_id["workshop.screen/value"]["text"], "Shared value")
 
+    def test_ui_close_preserves_other_menus_and_secondary_click_is_explicit(self):
+        s = self.sim()
+        s.action({"type": "key", "key": "e"})
+        s.action({"type": "ui_close"})
+        self.assertEqual(s.world.player["menu"], "inventory")
+        ui = self.open(s)
+        before = ui.snapshot()
+        result = s.action({"type": "click", "button": "right", "x": 0.5, "y": 0.5})
+        self.assertEqual(result["status"], "blocked")
+        self.assertEqual(before, ui.snapshot())
+
     def test_keep_ratio_outside_a_clip_does_not_draw_or_raise(self):
         strip = Image.new("RGBA", (4, 1), (255, 0, 0, 255))
         output = io.BytesIO()

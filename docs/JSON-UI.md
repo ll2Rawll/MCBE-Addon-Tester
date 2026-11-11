@@ -40,7 +40,7 @@ Call `load_addon`, read `catalog.ui_definitions`, then pass actions to `simulate
 
 Use `render_view` between actions to inspect changes. All pointer coordinates are normalized to the entire output image. The logical viewport and PNG dimensions may differ; rendering and hit regions scale together. UI previews have no tool overlay obscuring controls. Image metadata and exported reports identify them as independent simulation.
 
-`ui_open` also accepts `$`-prefixed `variables`. Explicit template variables override inherited defaults. `ui_bind` updates existing/provides new `#` values and rebuilds layout. `ui_pointer` accepts optional `pressed:true/false`; a held pointer produces one pressed event until released. `click` activates once. `key` supports Tab, declared directional focus links, Enter/Space and Escape. `text` replaces the focused edit box's value subject to `max_length`. `ui_close` closes explicitly. These actions do not send operating-system input.
+`ui_open` also accepts `$`-prefixed `variables`. Explicit template variables override inherited defaults. `ui_bind` updates existing/provides new `#` values and rebuilds layout. `ui_pointer` accepts optional `pressed:true/false`; a held pointer produces one pressed event until released. `click` activates once using the primary button; other pointer buttons are explicitly unsupported. `key` supports Tab, declared directional focus links, Enter/Space and Escape. `text` replaces the focused edit box's value subject to `max_length`. `ui_close` closes explicitly. These actions do not send operating-system input.
 
 Inspect and assert:
 

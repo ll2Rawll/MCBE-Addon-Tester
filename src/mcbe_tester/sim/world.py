@@ -638,6 +638,8 @@ class World(EntitySystem):
 
     def click(self, action):
         if self.player["menu"] != "game":
+            if self.json_ui.current and action.get("button", "left") != "left":
+                raise Unsupported("JSON UI click models only the primary pointer button")
             x, y = action.get("x"), action.get("y")
             if (
                 not isinstance(x, (int, float))

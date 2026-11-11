@@ -332,8 +332,9 @@ class JsonUI:
         return self.snapshot()
 
     def close(self):
-        if self.current:
-            self.world.log("ui-closed", screen=self.current["screen"])
+        if self.current is None:
+            return
+        self.world.log("ui-closed", screen=self.current["screen"])
         self.current = None
         self.nodes = []
         self._by_id = {}
