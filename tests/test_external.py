@@ -8,6 +8,19 @@ from mcbe_tester.tool_results import classify
 
 
 class ExternalTests(unittest.TestCase):
+    def test_child_cannot_consume_mcp_stdin(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            result = run_bounded(
+                [sys.executable, "-c", "import sys; print(repr(sys.stdin.read()))"],
+                root,
+                root / "log",
+                root / "STOP",
+                5,
+            )
+            self.assertEqual(result["exit_code"], 0)
+            self.assertEqual((root / "log").read_text().strip(), "''")
+
     def test_mct_report_errors_do_not_pass(self):
         result = classify("mct", 0, {"command": "validate", "projects": [{}], "errors": 1})
         self.assertEqual(result["status"], "failed")

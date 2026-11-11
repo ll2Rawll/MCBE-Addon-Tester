@@ -206,8 +206,8 @@ for a test matrix matching your deployment. BDS cannot render client menus or te
 `approve_visual_reference` stores a reviewed baseline with its hash, game build and review
 reason. `compare_visual` creates a pixel difference image and checks a configurable changed-pixel
 fraction against a reference from an **earlier reviewed run** with matching recorded settings.
-It does not let a run approve itself by comparing its own newly approved screenshot. It checks the changed-pixel
-fraction; it never resizes mismatched screenshots to force a pass. Fix the camera, lighting,
+It does not let a run approve itself by comparing its own newly approved screenshot, and
+it never resizes mismatched screenshots to force a pass. Fix the camera, lighting,
 resolution and GUI scale, and use a bounded region when unrelated animation would add noise.
 AI reference approval is recorded as AI review. A pixel match cannot establish an unknown
 design's correctness, and a different pixel is not automatically a game bug.

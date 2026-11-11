@@ -15,7 +15,9 @@ def run_bounded(command, cwd, log_path, stop_file, timeout):
         else {"start_new_session": True}
     )
     with log_path.open("w", encoding="utf-8") as output:
-        process = subprocess.Popen(command, cwd=cwd, stdout=output, stderr=subprocess.STDOUT, **options)
+        process = subprocess.Popen(
+            command, cwd=cwd, stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, **options
+        )
         deadline = time.monotonic() + timeout
         reason = None
         try:
